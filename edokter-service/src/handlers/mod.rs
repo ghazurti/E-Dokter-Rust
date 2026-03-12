@@ -1,0 +1,13 @@
+pub mod soap;
+pub mod prescription;
+pub mod dashboard;
+pub mod queue;
+pub mod monitoring;
+pub mod registration;
+pub mod auth;
+pub mod poliklinik;
+pub mod lab;
+pub mod radiology;
+pub mod ranap;
+pub mod resume;
+pub mod results;

@@ -26,6 +26,7 @@ import { RadiologiTab } from '@/components/pemeriksaan/tabs/RadiologiTab'
 import HasilLabTab from '@/components/pemeriksaan/tabs/HasilLabTab'
 import HasilRadTab from '@/components/pemeriksaan/tabs/HasilRadTab'
 import ResumeTab from '@/components/pemeriksaan/tabs/ResumeTab'
+import { IcareButton } from '@/components/pemeriksaan/IcareButton'
 
 import { saveSoapAction, savePrescriptionFullAction, saveLabRequestAction, saveRadiologyRequestAction } from '@/app/pasien-rawat-jalan/actions'
 
@@ -250,6 +251,13 @@ const [formData, setFormData] = useState({
                    <span className="text-emerald-600 font-extrabold">{patient.nm_poli}</span>
                 </p>
              </div>
+          </div>
+          
+          <div className="ml-4 border-l border-slate-100 pl-6 hidden md:block">
+             <IcareButton 
+                nik_atau_kartu={patient.no_peserta || patient.no_ktp || ""} 
+                kode_dokter={patient.kd_dokter || ""} 
+             />
           </div>
         </div>
 

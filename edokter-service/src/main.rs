@@ -1,5 +1,7 @@
 mod models;
 mod handlers;
+mod bpjs_crypto;
+mod bpjs_service;
 
 use axum::{
     routing::{get, post},
@@ -99,6 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/triase-igd/save/*no_rawat", post(handlers::soap::save_triase_igd))
         .route("/penilaian-medis-igd/*no_rawat", get(handlers::soap::get_penilaian_medis_igd))
         .route("/penilaian-medis-igd/save/*no_rawat", post(handlers::soap::save_penilaian_medis_igd))
+        .route("/bpjs/icare/validate", post(handlers::bpjs::validate_icare))
         .layer(CorsLayer::permissive())
         .with_state(pool);
 

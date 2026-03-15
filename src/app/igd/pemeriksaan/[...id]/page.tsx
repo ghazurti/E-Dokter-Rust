@@ -146,6 +146,7 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
                 <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">RM: {patient.no_rkm_medis} | {noRawatJoined}</p>
              </div>
           </div>
+
         </div>
         <div className="flex items-center gap-3">
           {saveStatus === 'success' && <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full text-[10px] font-black border border-emerald-100 uppercase tracking-widest">Berhasil Disimpan</div>}

@@ -25,6 +25,8 @@ pub struct RegistrationDetail {
     pub kd_poli: Option<String>,
     pub kd_pj: Option<String>,
     pub kd_sps: Option<String>,
+    pub no_ktp: Option<String>,
+    pub no_peserta: Option<String>,
 }
 
 pub async fn get_registration_detail(
@@ -33,7 +35,7 @@ pub async fn get_registration_detail(
 ) -> Result<Json<RegistrationDetail>, (StatusCode, String)> {
     let detail = sqlx::query_as::<_, RegistrationDetail>(
         "SELECT r.no_reg, r.no_rawat, r.tgl_registrasi, r.jam_reg, r.stts,
-         p.nm_pasien, p.no_rkm_medis, p.jk, p.tgl_lahir,
+         p.nm_pasien, p.no_rkm_medis, p.jk, p.tgl_lahir, p.no_ktp, p.no_peserta,
          d.nm_dokter, d.kd_dokter, d.kd_sps, pk.nm_poli, pk.kd_poli, pj.png_jawab, r.kd_pj
          FROM reg_periksa r
          LEFT JOIN pasien p ON r.no_rkm_medis = p.no_rkm_medis

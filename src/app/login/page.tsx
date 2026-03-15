@@ -75,7 +75,11 @@ export default function LoginPage() {
       localStorage.setItem('nm_poli', data.nm_poli)
       localStorage.setItem('token', data.token)
       
-      router.push('/')
+      if (data.kd_poli === 'IGDK') {
+        window.location.href = '/igd'
+      } else {
+        window.location.href = '/'
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {

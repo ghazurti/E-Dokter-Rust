@@ -10,18 +10,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (token && isLoginPage) {
-    const kd_poli = request.cookies.get('kd_poli')?.value
-    if (kd_poli === 'IGDK') {
-      return NextResponse.redirect(new URL('/igd', request.url))
-    }
     return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  if (token && request.nextUrl.pathname === '/') {
-    const kd_poli = request.cookies.get('kd_poli')?.value
-    if (kd_poli === 'IGDK') {
-      return NextResponse.redirect(new URL('/igd', request.url))
-    }
   }
 
   return NextResponse.next()

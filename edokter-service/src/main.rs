@@ -103,6 +103,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/penilaian-medis-igd/save/*no_rawat", post(handlers::soap::save_penilaian_medis_igd))
         .route("/bpjs/icare/validate", post(handlers::bpjs::validate_icare))
         .route("/ai/soap-summary", post(handlers::ai::get_soap_summary))
+        .route("/ai/sbar-summary", post(handlers::ai::get_sbar_summary))
         .layer(CorsLayer::permissive())
         .with_state(pool);
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, use, useEffect } from 'react'
-import { ArrowLeft, Bed, Stethoscope, ClipboardList, Pill, Beaker, Monitor, Save, Loader2, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Bed, Stethoscope, ClipboardList, Pill, Beaker, Monitor, Save, Loader2, CheckCircle2, ClipboardCheck } from 'lucide-react'
 import SoapInapTab from '@/components/pemeriksaan/tabs/soapInapTab'
 import ResumeInapTab from '@/components/pemeriksaan/tabs/ResumeInapTab'
 import ResepInapTab from '@/components/pemeriksaan/tabs/ResepInapTab'
@@ -10,6 +10,7 @@ import RadiologiInapTab from '@/components/pemeriksaan/tabs/PeriksaRadInap'
 import HasilLabTab from '@/components/pemeriksaan/tabs/HasilLabTab'
 import HasilRadTab from '@/components/pemeriksaan/tabs/HasilRadTab'
 import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
+import { AiSbarHandover } from '@/components/pemeriksaan/AiSbarHandover'
 
 import { savePrescriptionFullAction } from '@/app/pasien-rawat-jalan/actions'
 
@@ -24,6 +25,7 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [highlightActive, setHighlightActive] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [showSbar, setShowSbar] = useState(false)
 
   // Prescription States
   const [standardMeds, setStandardMeds] = useState<any[]>([])
@@ -208,6 +210,58 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
     }
   };
 
+  const handleSaveSbar = async (sbarData: any) => {
+    setIsSaving(true)
+    try {
+      const serviceUrl = process.env.NEXT_PUBLIC_RUST_SERVICE_URL || 'http://localhost:3001';
+      
+      const payload = {
+        keluhan: `[SBAR: SITUATION & BACKGROUND]\n${sbarData.situation}\n${sbarData.background}`,
+        pemeriksaan: `[SBAR: OBJECTIVE/VITALS]\nTD: ${formData.tensi}, Suhu: ${formData.suhu_tubuh}, Nadi: ${formData.nadi}`,
+        alergi: formData.alergi,
+        suhu: formData.suhu_tubuh,
+        tensi: formData.tensi,
+        nadi: formData.nadi,
+        respirasi: formData.respirasi,
+        spo2: formData.spo2,
+        berat: formData.berat,
+        tinggi: formData.tinggi,
+        lingkar_perut: '-',
+        lingkar_kepala: '-',
+        lingkar_dada: '-',
+        gcs: formData.gcs,
+        kesadaran: formData.kesadaran,
+        penilaian: `[SBAR: ASSESSMENT]\n${sbarData.assessment}`,
+        tindak_lanjut: `[SBAR: RECOMMENDATION]\n${sbarData.recommendation}`,
+        instruksi: `[TBAK: KONFIRMASI] Instruksi telah dibacakan ulang kepada Dokter ${sbarData.doctorReceiver}.`,
+        evaluasi: 'Handover SBAR via AI',
+        nip: formData.nip || 'P0001'
+      }
+
+      const slashNoRawat = noRawat.replace(/-/g, '/');
+      const response = await fetch(`${serviceUrl}/soap-ranap/${slashNoRawat}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        alert('SBAR Handover berhasil disimpan ke CPPT!');
+        fetchHistory();
+      } else {
+        const error = await response.text();
+        throw new Error(error);
+      }
+    } catch (error: any) {
+      console.error(error);
+      alert('Gagal menyimpan SBAR: ' + error.message);
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 pb-10">
       {/* HEADER NAVIGATION */}
@@ -243,6 +297,16 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
                     <Save className="w-4 h-4" />
                   )}
                   {isSaving ? 'Menyimpan...' : 'Simpan SOAP'}
+                </button>
+             )}
+
+             {activeTab === 'SOAP' && (
+                <button 
+                  onClick={() => setShowSbar(true)}
+                  className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100 active:scale-95"
+                >
+                  <ClipboardCheck className="w-4 h-4" />
+                  SBAR Handover
                 </button>
              )}
 
@@ -401,6 +465,15 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
           </div>
         </div>
       </div>
+
+      {showSbar && (
+        <AiSbarHandover 
+          noRawat={noRawat}
+          soapData={formData}
+          onClose={() => setShowSbar(false)}
+          onSave={handleSaveSbar}
+        />
+      )}
     </div>
   )
 }

@@ -44,3 +44,33 @@ pub struct ResumeMedis {
     pub kontrol: String,
     pub obat_pulang: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct ResumeMedisRalan {
+    pub no_rawat: String,
+    pub kd_dokter: String,
+    pub keluhan_utama: String,
+    pub jalannya_penyakit: String,
+    pub pemeriksaan_penunjang: String,
+    pub hasil_laborat: String,
+    pub diagnosa_utama: String,
+    pub kd_diagnosa_utama: String,
+    pub diagnosa_sekunder: String,
+    pub kd_diagnosa_sekunder: String,
+    pub diagnosa_sekunder2: String,
+    pub kd_diagnosa_sekunder2: String,
+    pub diagnosa_sekunder3: String,
+    pub kd_diagnosa_sekunder3: String,
+    pub diagnosa_sekunder4: String,
+    pub kd_diagnosa_sekunder4: String,
+    pub prosedur_utama: String,
+    pub kd_prosedur_utama: String,
+    pub prosedur_sekunder: String,
+    pub kd_prosedur_sekunder: String,
+    pub prosedur_sekunder2: String,
+    pub kd_prosedur_sekunder2: String,
+    pub prosedur_sekunder3: String,
+    pub kd_prosedur_sekunder3: String,
+    pub kondisi_pulang: String,
+    pub obat_pulang: String,
+}

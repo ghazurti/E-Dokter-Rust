@@ -11,8 +11,8 @@ pub struct RegistrationParams {
 pub struct RegistrationDetail {
     pub no_reg: Option<String>,
     pub no_rawat: String,
-    pub tgl_registrasi: Option<chrono::NaiveDate>,
-    pub jam_reg: Option<chrono::NaiveTime>,
+    pub tgl_registrasi: Option<String>,
+    pub jam_reg: Option<String>,
     pub stts: Option<String>,
     pub nm_pasien: Option<String>,
     pub no_rkm_medis: Option<String>,
@@ -20,7 +20,7 @@ pub struct RegistrationDetail {
     pub nm_poli: Option<String>,
     pub png_jawab: Option<String>,
     pub jk: Option<String>,
-    pub tgl_lahir: Option<chrono::NaiveDate>,
+    pub tgl_lahir: Option<String>,
     pub kd_dokter: Option<String>,
     pub kd_poli: Option<String>,
     pub kd_pj: Option<String>,
@@ -34,8 +34,8 @@ pub async fn get_registration_detail(
     Query(params): Query<RegistrationParams>,
 ) -> Result<Json<RegistrationDetail>, (StatusCode, String)> {
     let detail = sqlx::query_as::<_, RegistrationDetail>(
-        "SELECT r.no_reg, r.no_rawat, r.tgl_registrasi, r.jam_reg, r.stts,
-         p.nm_pasien, p.no_rkm_medis, p.jk, p.tgl_lahir, p.no_ktp, p.no_peserta,
+        "SELECT r.no_reg, r.no_rawat, CAST(r.tgl_registrasi AS CHAR) as tgl_registrasi, CAST(r.jam_reg AS CHAR) as jam_reg, r.stts,
+         p.nm_pasien, p.no_rkm_medis, p.jk, CAST(p.tgl_lahir AS CHAR) as tgl_lahir, p.no_ktp, p.no_peserta,
          d.nm_dokter, d.kd_dokter, d.kd_sps, pk.nm_poli, pk.kd_poli, pj.png_jawab, r.kd_pj
          FROM reg_periksa r
          LEFT JOIN pasien p ON r.no_rkm_medis = p.no_rkm_medis

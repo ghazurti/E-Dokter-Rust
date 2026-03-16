@@ -2,7 +2,7 @@
 
 import { Activity, Stethoscope, Save } from 'lucide-react'
 
-export function AsesmenIgdTab({ formData, updateField }: any) {
+export function AsesmenIgdTab({ formData, updateField, onSave, isSaving }: any) {
   return (
     <div className="space-y-10 pb-20">
       <section className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
@@ -110,6 +110,21 @@ export function AsesmenIgdTab({ formData, updateField }: any) {
         <TextAreaField label="Diagnosis" value={formData.diagnosis} onChange={(v: string) => updateField('diagnosis', v)} />
         <TextAreaField label="Tata Laksana / Rencana" value={formData.tata} onChange={(v: string) => updateField('tata', v)} />
       </section>
+
+      <div className="pt-8 flex justify-end">
+        <button 
+          onClick={onSave}
+          disabled={isSaving}
+          className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs hover:bg-rose-600 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50"
+        >
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <Save className="w-5 h-5 text-rose-400" />
+          )}
+          {isSaving ? 'Menyimpan...' : 'Simpan Asesmen IGD'}
+        </button>
+      </div>
     </div>
   )
 }

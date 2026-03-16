@@ -24,6 +24,8 @@ interface RadiologiTabProps {
   setSelectedTests: (tests: any[]) => void
   notes: { diagnosa: string; informasi: string }
   setNotes: (notes: { diagnosa: string; informasi: string }) => void
+  onSave?: () => Promise<void>
+  isSaving?: boolean
 }
 
 const CATEGORIES = [
@@ -33,7 +35,16 @@ const CATEGORIES = [
   { id: 'mri', name: 'MRI', icon: Dna, color: 'text-purple-500', bg: 'bg-purple-50' },
 ]
 
-export function RadiologiTab({ noRawat, kdDokter, selectedTests, setSelectedTests, notes, setNotes }: RadiologiTabProps) {
+export function RadiologiTab({ 
+  noRawat, 
+  kdDokter, 
+  selectedTests, 
+  setSelectedTests, 
+  notes, 
+  setNotes,
+  onSave,
+  isSaving
+}: RadiologiTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("polos")
   const [categoryResults, setCategoryResults] = useState<any[]>([])
@@ -221,6 +232,21 @@ export function RadiologiTab({ noRawat, kdDokter, selectedTests, setSelectedTest
             </div>
           </div>
         )}
+      </div>
+
+      <div className="pt-8 flex justify-end">
+        <button 
+          onClick={onSave}
+          disabled={isSaving || selectedTests.length === 0}
+          className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs hover:bg-emerald-600 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 min-w-[240px] justify-center"
+        >
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <Radiation className="w-5 h-5 text-emerald-400" />
+          )}
+          {isSaving ? 'Mengirim Permintaan...' : 'Kirim Permintaan Radiologi'}
+        </button>
       </div>
     </div>
   )

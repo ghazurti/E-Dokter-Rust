@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, use, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import * as React from 'react'
 import { ArrowLeft, Bed, Stethoscope, ClipboardList, Pill, Beaker, Monitor, Save, Loader2, CheckCircle2, ClipboardCheck } from 'lucide-react'
 import SoapInapTab from '@/components/pemeriksaan/tabs/soapInapTab'
 import ResumeInapTab from '@/components/pemeriksaan/tabs/ResumeInapTab'
@@ -14,9 +15,41 @@ import { AiSbarHandover } from '@/components/pemeriksaan/ai/AiSbarHandover'
 
 import { savePrescriptionFullAction } from '@/app/pasien-rawat-jalan/actions'
 
-export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat: string }> }) {
-  const resolvedParams = use(params);
-  const noRawat = resolvedParams.no_rawat;
+const getInitialFormData = (no_rawat: string) => ({
+  no_rawat, 
+  tgl_perawatan: '', 
+  jam_rawat: '',
+  suhu_tubuh: '',
+  tensi: '',
+  nadi: '',
+  respirasi: '',
+  tinggi: '',
+  berat: '',
+  spo2: '',
+  gcs: '',
+  kesadaran: 'Compos Mentis',
+  keluhan: '',
+  pemeriksaan: '',
+  alergi: '-',
+  penilaian: '',
+  rtl: '',
+  instruksi: '',
+  evaluasi: '',
+  nip: ''
+});
+
+export default function DetailRanapPage({ params }: { params: any }) {
+  const [resolvedParams, setResolvedParams] = useState<{ no_rawat: string } | null>(null)
+
+  useEffect(() => {
+    if (params instanceof Promise) {
+      params.then(setResolvedParams)
+    } else {
+      setResolvedParams(params)
+    }
+  }, [params])
+
+  const noRawat = resolvedParams?.no_rawat || '';
   const displayNoRawat = noRawat.replace(/-/g, '/')
   
   const [activeTab, setActiveTab] = useState('SOAP')
@@ -32,28 +65,14 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
   const [compoundedMeds, setCompoundedMeds] = useState<any[]>([])
   const [patient, setPatient] = useState<any>(null)
 
-  const [formData, setFormData] = useState({
-    no_rawat: noRawat, 
-    tgl_perawatan: '', 
-    jam_rawat: '',
-    suhu_tubuh: '',
-    tensi: '',
-    nadi: '',
-    respirasi: '',
-    tinggi: '',
-    berat: '',
-    spo2: '',
-    gcs: '',
-    kesadaran: 'Compos Mentis',
-    keluhan: '',
-    pemeriksaan: '',
-    alergi: '-',
-    penilaian: '',
-    rtl: '',
-    instruksi: '',
-    evaluasi: '',
-    nip: ''
-  })
+  const [formData, setFormData] = useState(getInitialFormData(noRawat))
+
+  // Update formData when noRawat and patient are ready
+  useEffect(() => {
+    if (noRawat) {
+      setFormData(prev => ({ ...prev, no_rawat: noRawat }));
+    }
+  }, [noRawat]);
 
   useEffect(() => {
     // Get NIP from cookie if available
@@ -125,33 +144,31 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
     setTimeout(() => setShowToast(false), 3000)
   }
 
-  const handleSave = async () => {
+  const handleSaveSoap = async (customData?: any) => {
     setIsSaving(true)
     try {
       const serviceUrl = process.env.NEXT_PUBLIC_RUST_SERVICE_URL || 'http://localhost:3001';
-      
-      // Map formData to SoapRequest expected by backend
       const payload = {
-        keluhan: formData.keluhan,
-        pemeriksaan: formData.pemeriksaan,
-        alergi: formData.alergi,
+        no_rawat: noRawat,
+        tgl_perawatan: new Date().toISOString().split('T')[0],
+        jam_rawat: new Date().toLocaleTimeString('en-GB', { hour12: false }),
         suhu: formData.suhu_tubuh,
         tensi: formData.tensi,
         nadi: formData.nadi,
         respirasi: formData.respirasi,
-        spo2: formData.spo2,
-        berat: formData.berat,
         tinggi: formData.tinggi,
-        lingkar_perut: '-', // Not in UI yet
-        lingkar_kepala: '-',
-        lingkar_dada: '-',
+        berat: formData.berat,
+        spo2: formData.spo2,
         gcs: formData.gcs,
         kesadaran: formData.kesadaran,
+        keluhan: formData.keluhan,
+        pemeriksaan: formData.pemeriksaan,
+        alergi: formData.alergi,
         penilaian: formData.penilaian,
         tindak_lanjut: formData.rtl,
         instruksi: formData.instruksi,
         evaluasi: formData.evaluasi,
-        nip: formData.nip || 'P0001'
+        nip: patient?.kd_dokter || formData.nip || 'P0001'
       }
 
       const slashNoRawat = noRawat.replace(/-/g, '/');
@@ -165,7 +182,8 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
 
       if (response.ok) {
         alert('Data SOAP berhasil disimpan!');
-        fetchHistory(); // Refresh history
+        setFormData(getInitialFormData(noRawat));
+        fetchHistory();
       } else {
         const error = await response.text();
         throw new Error(error);
@@ -235,7 +253,7 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
         tindak_lanjut: `[SBAR: RECOMMENDATION]\n${sbarData.recommendation}`,
         instruksi: `[TBAK: KONFIRMASI] Instruksi telah dibacakan ulang kepada Dokter ${sbarData.doctorReceiver}.`,
         evaluasi: 'Handover SBAR via AI',
-        nip: formData.nip || 'P0001'
+        nip: patient?.kd_dokter || formData.nip || 'P0001'
       }
 
       const slashNoRawat = noRawat.replace(/-/g, '/');
@@ -248,7 +266,9 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
       });
 
       if (response.ok) {
-        alert('SBAR Handover berhasil disimpan ke CPPT!');
+        alert('Handover SBAR berhasil disimpan!');
+        setShowSbar(false);
+        setFormData(getInitialFormData(noRawat));
         fetchHistory();
       } else {
         const error = await response.text();
@@ -280,50 +300,6 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
           </div>
 
           <div className="flex items-center gap-3">
-             {showToast && (
-                <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full text-[10px] font-black border border-emerald-100 uppercase tracking-widest animate-in fade-in slide-in-from-right-2 mr-4">
-                   <CheckCircle2 className="w-3 h-3 inline mr-1" /> AI Berhasil Memetakan Data
-                </div>
-             )}
-             {activeTab === 'SOAP' && (
-                <button 
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg shadow-slate-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  {isSaving ? 'Menyimpan...' : 'Simpan SOAP'}
-                </button>
-             )}
-
-             {activeTab === 'SOAP' && (
-                <button 
-                  onClick={() => setShowSbar(true)}
-                  className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-900 transition-all shadow-lg shadow-indigo-100 active:scale-95"
-                >
-                  <ClipboardCheck className="w-4 h-4" />
-                  SBAR Handover
-                </button>
-             )}
-
-             {activeTab === 'RESEP' && (
-                <button 
-                  onClick={handleSavePrescription}
-                  disabled={isSaving || (standardMeds.length === 0 && compoundedMeds.length === 0)}
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-900 transition-all shadow-lg shadow-blue-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  {isSaving ? 'Mengirim...' : 'Kirim Resep'}
-                </button>
-             )}
           </div>
         </div>
       </div>
@@ -418,6 +394,8 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
               formData={formData} 
               updateField={updateField} 
               history={history}
+              onSave={handleSaveSoap}
+              isSaving={isSaving}
             />
           )}
 
@@ -429,6 +407,8 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
               setCompoundedMeds={setCompoundedMeds}
               noRawat={noRawat}
               patient={patient}
+              onSave={handleSavePrescription}
+              isSaving={isSaving}
             />
           )}
 

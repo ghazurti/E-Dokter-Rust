@@ -2,7 +2,7 @@
 
 import { Activity, Thermometer, Gauge, Wind, Scale, Weight, Brain, FileText, ClipboardCheck, MessageSquare, History, Calendar, Clock, User } from 'lucide-react'
 
-export default function SoapInapTab({ formData = {}, updateField, history = [] }: any) {
+export default function SoapInapTab({ formData = {}, updateField, history = [], onSave, isSaving }: any) {
   return (
     <div className="space-y-12">
       {/* 1. Vital Signs Card */}
@@ -89,6 +89,21 @@ export default function SoapInapTab({ formData = {}, updateField, history = [] }
              {formData?.nip || 'D0001'}
           </div>
         </div>
+      </div>
+
+      <div className="pt-8 flex justify-end">
+        <button 
+          onClick={() => onSave?.(formData)}
+          disabled={isSaving}
+          className="bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black text-xs hover:bg-emerald-600 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50"
+        >
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <ClipboardCheck className="w-6 h-6 text-emerald-400" />
+          )}
+          {isSaving ? 'Menyimpan...' : 'Simpan SOAP & CPPT'}
+        </button>
       </div>
 
       {/* 4. SOAP HISTORY SECTION */}

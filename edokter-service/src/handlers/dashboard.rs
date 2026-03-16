@@ -50,7 +50,7 @@ pub async fn get_dashboard(
 
     // 2. Trend
     let trend_query_sql = format!(
-        "SELECT tgl_registrasi as date, COUNT(*) as count 
+        "SELECT CAST(tgl_registrasi AS CHAR) as date, COUNT(*) as count 
          FROM reg_periksa WHERE tgl_registrasi BETWEEN ? AND ? {} GROUP BY tgl_registrasi ORDER BY tgl_registrasi ASC",
          filter_sql
     );

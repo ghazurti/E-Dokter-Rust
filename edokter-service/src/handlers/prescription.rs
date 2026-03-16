@@ -6,7 +6,7 @@ use axum::{
 use serde::Deserialize;
 use sqlx::{MySql, Pool, Row};
 use crate::models::prescription::{
-    PrescriptionRequest, MedicineResult, MetodeRacikResult,
+    PrescriptionRequest, MedicineResult, MetodeRacikResult, AturanPakaiResult,
     LastPrescription, StandardMed, CompoundedMed, CompoundedMedItem, RestriksiObat
 };
 use chrono::Local;
@@ -165,6 +165,7 @@ pub async fn search_medicine(
          LEFT JOIN gudangbarang gb ON db.kode_brng = gb.kode_brng AND gb.kd_bangsal = ? 
          WHERE db.kode_brng LIKE ? OR db.nama_brng LIKE ? 
          GROUP BY db.kode_brng, db.nama_brng 
+         HAVING stok > 0
          LIMIT 15"
     )
     .bind(&kd_depo)
@@ -283,4 +284,16 @@ pub async fn get_medicine_restrictions(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(result))
+}
+pub async fn get_aturan_pakai(
+    State(pool): State<Pool<MySql>>,
+) -> Result<Json<Vec<AturanPakaiResult>>, (StatusCode, String)> {
+    let results = sqlx::query_as::<_, AturanPakaiResult>(
+        "SELECT aturan FROM master_aturan_pakai"
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e: sqlx::Error| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(results))
 }

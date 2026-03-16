@@ -216,3 +216,14 @@ export async function getMedicineRestrictionsAction(kode_brng: string, kd_sps: s
     return null;
   }
 }
+export async function getAturanPakaiAction() {
+  try {
+    const serviceUrl = process.env.RUST_SERVICE_URL || 'http://localhost:3001';
+    const response = await fetch(`${serviceUrl}/aturan-pakai`);
+    if (!response.ok) throw new Error('Rust Service error');
+    return await response.json();
+  } catch (error) {
+    console.error('Fetch aturan pakai via Rust failed:', error)
+    return []
+  }
+}

@@ -43,6 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/search/icd", get(handlers::soap::search_icd))
         .route("/search/medicine", get(handlers::prescription::search_medicine))
         .route("/metode-racik", get(handlers::prescription::get_metode_racik))
+        .route("/aturan-pakai", get(handlers::prescription::get_aturan_pakai))
         .route("/resep", post(handlers::prescription::save_prescription))
         .route("/resep/last/:no_rkm_medis", get(handlers::prescription::get_last_prescription))
         .route("/resep/restriction/:kode_brng/:kd_sps", get(handlers::prescription::get_medicine_restrictions))
@@ -103,6 +104,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/bpjs/icare/validate", post(handlers::bpjs::validate_icare))
         .route("/ai/soap-summary", post(handlers::ai::get_soap_summary))
         .route("/ai/sbar-summary", post(handlers::ai::get_sbar_summary))
+        .route("/ai/resume-summary", post(handlers::ai::get_resume_summary))
+        .route("/ai/resume-summary-ralan", post(handlers::ai::get_resume_summary_ralan))
+        .route("/resume-ralan/:no_rawat", get(handlers::resume::get_resume_ralan))
+        .route("/resume-ralan/save/*no_rawat", post(handlers::resume::save_resume_ralan))
         .layer(CorsLayer::permissive())
         .with_state(pool);
 

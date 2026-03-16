@@ -47,13 +47,17 @@ pub struct MetodeRacikResult {
     pub kd_racik: String,
     pub nm_racik: String,
 }
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct AturanPakaiResult {
+    pub aturan: String,
+}
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct QueueItemRaw {
     pub no_reg: Option<String>,
     pub no_rawat: String,
-    pub tgl_registrasi: Option<chrono::NaiveDate>,
-    pub jam_reg: Option<chrono::NaiveTime>,
+    pub tgl_registrasi: Option<String>,
+    pub jam_reg: Option<String>,
     pub stts: Option<String>,
     pub nm_pasien: Option<String>,
     pub no_rkm_medis: Option<String>,
@@ -72,7 +76,7 @@ pub struct DoctorItem {
 #[derive(Debug, Serialize)]
 pub struct MonitoringResep {
     pub no_resep: String,
-    pub tgl_perawatan: Option<chrono::NaiveDate>,
+    pub tgl_perawatan: Option<String>,
     pub nm_pasien: Option<String>,
     pub nm_dokter: Option<String>,
     pub detail_standar: Vec<String>,
@@ -87,7 +91,7 @@ pub struct RanapItemRaw {
     pub nm_dokter: String,
     pub kamar: String,
     pub kelas: String,
-    pub tgl_masuk: Option<chrono::NaiveDate>,
+    pub tgl_masuk: Option<String>,
     pub has_lab: Option<i32>,
 }
 

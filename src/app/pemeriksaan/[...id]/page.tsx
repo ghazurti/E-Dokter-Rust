@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
+import * as React from 'react'
 import { 
   ClipboardList, 
   Activity, 
@@ -31,9 +32,67 @@ import { AiQuickNotes } from '@/components/pemeriksaan/ai/AiQuickNotes'
 
 import { saveSoapAction, savePrescriptionFullAction, saveLabRequestAction, saveRadiologyRequestAction } from '@/app/pasien-rawat-jalan/actions'
 
-export default function PemeriksaanPage({ params }: { params: Promise<{ id: string[] }> }) {
-  const resolvedParams = use(params)
-  const noRawatJoined = resolvedParams.id.join('/')
+const initialFormData = {
+  // Field Pemeriksaan Fisik / SOAP
+  keluhan: '',
+  pemeriksaan: '',
+  alergi: '',
+  suhu: '',
+  tensi: '120/80',
+  nadi: '80',
+  respirasi: '20',
+  spo2: '',
+  berat: '',
+  tinggi: '',
+  lingkar_perut: '',
+  lingkar_kepala: '',
+  lingkar_dada: '',
+  gcs: '15',
+  kesadaran: 'Compos Mentis',
+  penilaian: '',
+  tindak_lanjut: '',
+  instruksi: '',
+  evaluasi: '',
+
+  // Field Baru Sesuai Struktur Tabel Database Anda
+  keluhan_utama: '',
+  jalannya_penyakit: '',
+  pemeriksaan_penunjang: '',
+  hasil_laborat: '',
+  diagnosa_utama: '',
+  kd_diagnosa_utama: '',
+  diagnosa_sekunder: '',
+  kd_diagnosa_sekunder: '',
+  diagnosa_sekunder2: '',
+  kd_diagnosa_sekunder2: '',
+  diagnosa_sekunder3: '',
+  kd_diagnosa_sekunder3: '',
+  diagnosa_sekunder4: '',
+  kd_diagnosa_sekunder4: '',
+  prosedur_utama: '',
+  kd_prosedur_utama: '',
+  prosedur_sekunder: '',
+  kd_prosedur_sekunder: '',
+  prosedur_sekunder2: '',
+  kd_prosedur_sekunder2: '',
+  prosedur_sekunder3: '',
+  kd_prosedur_sekunder3: '',
+  kondisi_pulang: 'Hidup',
+  obat_pulang: '',
+};
+
+export default function PemeriksaanPage({ params }: { params: any }) {
+  const [resolvedParams, setResolvedParams] = useState<{ id: string[] } | null>(null)
+
+  useEffect(() => {
+    if (params instanceof Promise) {
+      params.then(setResolvedParams)
+    } else {
+      setResolvedParams(params)
+    }
+  }, [params])
+
+  const noRawatJoined = (resolvedParams?.id?.join('/') || '').replace(/-/g, '/')
   
   const [patient, setPatient] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -45,42 +104,7 @@ export default function PemeriksaanPage({ params }: { params: Promise<{ id: stri
   const [highlightActive, setHighlightActive] = useState(false)
 
   // Lifted State
-const [formData, setFormData] = useState({
-    // Field Pemeriksaan Fisik / SOAP
-    keluhan: '',
-    pemeriksaan: '',
-    alergi: '',
-    suhu: '',
-    tensi: '120/80',
-    nadi: '80',
-    respirasi: '20',
-    spo2: '',
-    berat: '',
-    tinggi: '',
-    lingkar_perut: '',
-    lingkar_kepala: '',
-    lingkar_dada: '',
-    gcs: '15',
-    kesadaran: 'Compos Mentis',
-    penilaian: '',
-    tindak_lanjut: '',
-    instruksi: '',
-    evaluasi: '',
-
-    // Field Baru Sesuai Struktur Tabel Database Anda
-    keluhan_utama: '',
-    jalannya_penyakit: '',
-    pemeriksaan_penunjang: '',
-    hasil_laborat: '',
-    diagnosa_utama: '',
-    kd_diagnosa_utama: '',
-    diagnosa_sekunder: '',
-    kd_diagnosa_sekunder: '',
-    prosedur_utama: '',
-    kd_prosedur_utama: '',
-    kondisi_pulang: 'Hidup',
-    obat_pulang: '',
-  })
+  const [formData, setFormData] = useState(initialFormData)
 
   // Lab & Radiologi States (New)
   const [selectedLabTests, setSelectedLabTests] = useState<any[]>([])
@@ -94,6 +118,7 @@ const [formData, setFormData] = useState({
 
   useEffect(() => {
     async function fetchDetail() {
+      if (!noRawatJoined) return
       try {
         const serviceUrl = process.env.NEXT_PUBLIC_RUST_SERVICE_URL || 'http://localhost:3001'
         const res = await fetch(`${serviceUrl}/registration?no_rawat=${encodeURIComponent(noRawatJoined)}`)
@@ -107,6 +132,39 @@ const [formData, setFormData] = useState({
       }
     }
     fetchDetail()
+  }, [noRawatJoined])
+
+  useEffect(() => {
+    async function fetchResume() {
+      if (!noRawatJoined) return
+      try {
+        const serviceUrl = process.env.NEXT_PUBLIC_RUST_SERVICE_URL || 'http://localhost:3001'
+        const res = await fetch(`${serviceUrl}/resume-ralan/${noRawatJoined.replace(/\//g, '-')}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data) {
+            setFormData(prev => ({
+              ...prev,
+              keluhan_utama: data.keluhan_utama || prev.keluhan_utama,
+              jalannya_penyakit: data.jalannya_penyakit || prev.jalannya_penyakit,
+              pemeriksaan_penunjang: data.pemeriksaan_penunjang || prev.pemeriksaan_penunjang,
+              hasil_laborat: data.hasil_laborat || prev.hasil_laborat,
+              diagnosa_utama: data.diagnosa_utama || prev.diagnosa_utama,
+              kd_diagnosa_utama: data.kd_diagnosa_utama || prev.kd_diagnosa_utama,
+              diagnosa_sekunder: data.diagnosa_sekunder || prev.diagnosa_sekunder,
+              kd_diagnosa_sekunder: data.kd_diagnosa_sekunder || prev.kd_diagnosa_sekunder,
+              prosedur_utama: data.prosedur_utama || prev.prosedur_utama,
+              kd_prosedur_utama: data.kd_prosedur_utama || prev.kd_prosedur_utama,
+              kondisi_pulang: data.kondisi_pulang || prev.kondisi_pulang,
+              obat_pulang: data.obat_pulang || prev.obat_pulang,
+            }))
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat resume:", err)
+      }
+    }
+    fetchResume()
   }, [noRawatJoined])
 
   const updateField = (field: string, value: string) => {
@@ -136,64 +194,89 @@ const [formData, setFormData] = useState({
     setTimeout(() => setSaveStatus('idle'), 3000)
   }
 
-  const handleGlobalSave = async () => {
+  const handleSaveSoap = async (data: any) => {
     setSaving(true)
-    setSaveStatus('idle')
     try {
-      // 1. Save SOAP
-      const soapResult = await saveSoapAction(noRawatJoined, formData)
-      if (!soapResult.success) throw new Error(soapResult.error || 'Gagal menyimpan SOAP')
-
-      // 2. Save Prescription if any
-      if (standardMeds.length > 0 || compoundedMeds.length > 0) {
-        const resepResult = await savePrescriptionFullAction(
-          noRawatJoined,
-          patient.kd_dokter || "D0001",
-          "ralan",
-          standardMeds,
-          compoundedMeds
-        )
-        if (!resepResult.success) throw new Error(resepResult.error || 'Gagal menyimpan Resep')
-      }
-
-      // 3. Save Lab Request if any
-      if (selectedLabTests.length > 0) {
-        const labResult = await saveLabRequestAction({
-          no_rawat: noRawatJoined,
-          tests: selectedLabTests.map(t => ({
-            kd_jenis_prw: t.kd_jenis_prw,
-            id_templates: t.selectedTemplateIds || []
-          })),
-          dokter_perujuk: patient.kd_dokter || "D0001",
-          diagnosa_klinis: labNotes.diagnosa,
-          informasi_tambahan: labNotes.informasi
-        })
-        if (!labResult.success && typeof labResult === 'object' && 'error' in labResult) {
-           throw new Error(labResult.error || 'Gagal mengirim permintaan Lab')
-        }
-      }
-
-      // 4. Save Radiology Request if any
-      if (selectedRadTests.length > 0) {
-        const radResult = await saveRadiologyRequestAction({
-          no_rawat: noRawatJoined,
-          tests: selectedRadTests.map(t => ({
-            kd_jenis_prw: t.kd_jenis_prw
-          })),
-          dokter_perujuk: patient.kd_dokter || "D0001",
-          diagnosa_klinis: radNotes.diagnosa,
-          informasi_tambahan: radNotes.informasi
-        })
-        if (!radResult.success && typeof radResult === 'object' && 'error' in radResult) {
-            throw new Error(radResult.error || 'Gagal mengirim permintaan Radiologi')
-        }
-      }
-
+      const result = await saveSoapAction(noRawatJoined, { ...data, nip: patient?.kd_dokter })
+      if (!result.success) throw new Error(result.error || 'Gagal menyimpan SOAP')
+      setFormData(initialFormData)
       setSaveStatus('success')
       setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (err: any) {
-      setSaveStatus('error')
       setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSavePrescription = async () => {
+    setSaving(true)
+    try {
+      const result = await savePrescriptionFullAction(
+        noRawatJoined,
+        patient.kd_dokter || "D0001",
+        "ralan",
+        standardMeds,
+        compoundedMeds
+      )
+      if (!result.success) throw new Error(result.error || 'Gagal menyimpan Resep')
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveLab = async () => {
+    setSaving(true)
+    try {
+      const labResult = await saveLabRequestAction({
+        no_rawat: noRawatJoined,
+        tests: selectedLabTests.map(t => ({
+          kd_jenis_prw: t.kd_jenis_prw,
+          id_templates: t.selectedTemplateIds || []
+        })),
+        dokter_perujuk: patient.kd_dokter || "D0001",
+        diagnosa_klinis: labNotes.diagnosa,
+        informasi_tambahan: labNotes.informasi
+      })
+      if (!labResult.success && typeof labResult === 'object' && 'error' in labResult) {
+         throw new Error(labResult.error || 'Gagal mengirim permintaan Lab')
+      }
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveRadiology = async () => {
+    setSaving(true)
+    try {
+      const radResult = await saveRadiologyRequestAction({
+        no_rawat: noRawatJoined,
+        tests: selectedRadTests.map(t => ({
+          kd_jenis_prw: t.kd_jenis_prw
+        })),
+        dokter_perujuk: patient.kd_dokter || "D0001",
+        diagnosa_klinis: radNotes.diagnosa,
+        informasi_tambahan: radNotes.informasi
+      })
+      if (radResult && !radResult.success) {
+          throw new Error(radResult.error || 'Gagal mengirim permintaan Radiologi')
+      }
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
     } finally {
       setSaving(false)
     }
@@ -288,33 +371,6 @@ const [formData, setFormData] = useState({
         </div>
 
         <div className="flex items-center gap-3">
-           {saveStatus === 'success' && (
-              <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs animate-in fade-in slide-in-from-right-2 mr-4 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">
-                 <CheckCircle2 className="w-4 h-4" />
-                 Berhasil Disimpan
-              </div>
-           )}
-           {saveStatus === 'error' && (
-              <div className="flex items-center gap-2 text-red-600 font-bold text-xs animate-in fade-in slide-in-from-right-2 mr-4 bg-red-50 px-4 py-2 rounded-full border border-red-100">
-                 <AlertCircle className="w-4 h-4" />
-                 {errorMessage}
-              </div>
-           )}
-
-           <button 
-             disabled={saving}
-             onClick={handleGlobalSave}
-             className="bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black text-xs hover:bg-emerald-700 shadow-xl shadow-emerald-100 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 min-w-[160px] justify-center"
-           >
-             {saving ? (
-               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-             ) : (
-               <>
-                 <Save className="w-4 h-4" />
-                 {activeTabInfo.saveLabel}
-               </>
-             )}
-           </button>
         </div>
       </header>
 
@@ -395,8 +451,8 @@ const [formData, setFormData] = useState({
                   </div>
 
                   <div className={`bg-white min-h-[400px] transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
-                    {activeTab === 'SOAP' && <SoapTab formData={formData} updateField={updateField} />}
-                    {activeTab === 'DIAGNOSA' && <IcdTab formData={formData} updateField={updateField} />}
+                     {activeTab === 'SOAP' && <SoapTab formData={formData} updateField={updateField} onSave={handleSaveSoap} isSaving={saving} />}
+                    {activeTab === 'DIAGNOSA' && <IcdTab formData={formData} updateField={updateField} onSave={() => handleSaveSoap(formData)} isSaving={saving} />}
                     {activeTab === 'RESEP' && (
                        <PrescriptionTab 
                           standardMeds={standardMeds} 
@@ -405,6 +461,8 @@ const [formData, setFormData] = useState({
                           setCompoundedMeds={setCompoundedMeds}
                           patient={patient}
                           noRawat={noRawatJoined}
+                          onSave={handleSavePrescription}
+                          isSaving={saving}
                        />
                     )}
                     {activeTab === 'LAB' && (
@@ -415,6 +473,8 @@ const [formData, setFormData] = useState({
                           setSelectedTests={setSelectedLabTests}
                           notes={labNotes}
                           setNotes={setLabNotes}
+                          onSave={handleSaveLab}
+                          isSaving={saving}
                        />
                     )}
                     { activeTab === 'RADIOLOGI' && (
@@ -425,6 +485,8 @@ const [formData, setFormData] = useState({
                           setSelectedTests={setSelectedRadTests}
                           notes={radNotes}
                           setNotes={setRadNotes}
+                          onSave={handleSaveRadiology}
+                          isSaving={saving}
                        />
                     )}
                      {activeTab === 'HASIL_LAB' && (
@@ -450,29 +512,6 @@ const [formData, setFormData] = useState({
               </div>
            </div>
 
-           {/* Consistent Footer Action Bar */}
-           <div className="bg-white border-t border-slate-100 px-12 py-8 sticky bottom-0 z-20 flex justify-center shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] w-full">
-              <div className="w-full max-w-4xl flex items-center justify-between">
-                 <div className="flex items-center gap-2">
-                    
-                 </div>
-                 <div className="flex items-center gap-4">
-                    <button className="text-slate-400 font-bold text-sm hover:text-slate-900 transition-colors px-6">Batal</button>
-                    <button 
-                      disabled={saving}
-                      onClick={handleGlobalSave}
-                      className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs hover:bg-emerald-600 transition-all shadow-xl shadow-slate-100 flex items-center gap-3 active:scale-95 disabled:opacity-50"
-                    >
-                      {saving ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      ) : (
-                        <Save className="w-5 h-5 text-emerald-400" />
-                      )}
-                      <span>KONFIRMASI & SIMPAN {activeTabInfo.label}</span>
-                    </button>
-                 </div>
-              </div>
-           </div>
         </main>
       </div>
     </div>

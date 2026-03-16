@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
+import * as React from 'react'
 import { 
   ClipboardList, 
   Activity, 
@@ -34,9 +35,50 @@ import ResumeTab from '@/components/pemeriksaan/tabs/ResumeTab'
 import { saveSoapAction, savePrescriptionFullAction, saveLabRequestAction, saveRadiologyRequestAction } from '@/app/pasien-rawat-jalan/actions'
 import { saveTriaseIgdAction, saveAsesmenIgdAction } from '../actions'
 
-export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: string[] }> }) {
-  const resolvedParams = use(params)
-  const noRawatJoined = resolvedParams.id.join('/').replace(/-/g, '/')
+const initialFormData = {
+  // Standard SOAP
+  keluhan: '', pemeriksaan: '', alergi: '', suhu: '', tensi: '120/80', nadi: '80', respirasi: '20', spo2: '', berat: '', tinggi: '', lingkar_perut: '', lingkar_kepala: '', lingkar_dada: '', gcs: '15', kesadaran: 'Compos Mentis', penilaian: '', tindak_lanjut: '', instruksi: '', evaluasi: '',
+  // Specialized IGD Assessment
+  anamnesis: 'Autoanamnesis', hubungan: '', keluhan_utama: '', rps: '', rpd: '', rpk: '', rpo: '', keadaan: 'Sakit Sedang', spo: '', bb: '', tb: '', kepala: 'Normal', mata: 'Normal', gigi: 'Normal', leher: 'Normal', thoraks: 'Normal', abdomen: 'Normal', genital: 'Normal', ekstremitas: 'Normal', ket_fisik: '', ket_lokalis: '', ekg: '', rad: '', lab: '', diagnosis: '', tata: '', tanggal: new Date().toISOString(), kd_dokter: '',
+  
+  // Resume Medis Fields
+  jalannya_penyakit: '',
+  pemeriksaan_penunjang: '',
+  hasil_laborat: '',
+  diagnosa_utama: '',
+  kd_diagnosa_utama: '',
+  diagnosa_sekunder: '',
+  kd_diagnosa_sekunder: '',
+  diagnosa_sekunder2: '',
+  kd_diagnosa_sekunder2: '',
+  diagnosa_sekunder3: '',
+  kd_diagnosa_sekunder3: '',
+  diagnosa_sekunder4: '',
+  kd_diagnosa_sekunder4: '',
+  prosedur_utama: '',
+  kd_prosedur_utama: '',
+  prosedur_sekunder: '',
+  kd_prosedur_sekunder: '',
+  prosedur_sekunder2: '',
+  kd_prosedur_sekunder2: '',
+  prosedur_sekunder3: '',
+  kd_prosedur_sekunder3: '',
+  kondisi_pulang: 'Hidup',
+  obat_pulang: '',
+};
+
+export default function IgdPemeriksaanPage({ params }: { params: any }) {
+  const [resolvedParams, setResolvedParams] = useState<{ id: string[] } | null>(null)
+
+  useEffect(() => {
+    if (params instanceof Promise) {
+      params.then(setResolvedParams)
+    } else {
+      setResolvedParams(params)
+    }
+  }, [params])
+
+  const noRawatJoined = (resolvedParams?.id?.join('/') || '').replace(/-/g, '/')
   
   const [patient, setPatient] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -47,12 +89,7 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [highlightActive, setHighlightActive] = useState(false)
 
-  const [formData, setFormData] = useState({
-    // Standard SOAP
-    keluhan: '', pemeriksaan: '', alergi: '', suhu: '', tensi: '120/80', nadi: '80', respirasi: '20', spo2: '', berat: '', tinggi: '', lingkar_perut: '', lingkar_kepala: '', lingkar_dada: '', gcs: '15', kesadaran: 'Compos Mentis', penilaian: '', tindak_lanjut: '', instruksi: '', evaluasi: '',
-    // Specialized IGD Assessment
-    anamnesis: 'Autoanamnesis', hubungan: '', keluhan_utama: '', rps: '', rpd: '', rpk: '', rpo: '', keadaan: 'Sakit Sedang', spo: '', bb: '', tb: '', kepala: 'Normal', mata: 'Normal', gigi: 'Normal', leher: 'Normal', thoraks: 'Normal', abdomen: 'Normal', genital: 'Normal', ekstremitas: 'Normal', ket_fisik: '', ket_lokalis: '', ekg: '', rad: '', lab: '', diagnosis: '', tata: '', tanggal: new Date().toISOString(), kd_dokter: '',
-  })
+  const [formData, setFormData] = useState(initialFormData)
 
   const [standardMeds, setStandardMeds] = useState<any[]>([])
   const [compoundedMeds, setCompoundedMeds] = useState<any[]>([])
@@ -63,6 +100,7 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     async function fetchDetail() {
+      if (!noRawatJoined) return
       try {
         const serviceUrl = process.env.NEXT_PUBLIC_RUST_SERVICE_URL || 'http://localhost:3001'
         const res = await fetch(`${serviceUrl}/registration?no_rawat=${encodeURIComponent(noRawatJoined)}`)
@@ -78,6 +116,39 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
       }
     }
     fetchDetail()
+  }, [noRawatJoined])
+
+  useEffect(() => {
+    async function fetchResume() {
+      if (!noRawatJoined) return
+      try {
+        const serviceUrl = process.env.NEXT_PUBLIC_RUST_SERVICE_URL || 'http://localhost:3001'
+        const res = await fetch(`${serviceUrl}/resume-ralan/${noRawatJoined.replace(/\//g, '-')}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data) {
+            setFormData(prev => ({
+              ...prev,
+              keluhan_utama: data.keluhan_utama || prev.keluhan_utama,
+              jalannya_penyakit: data.jalannya_penyakit || prev.jalannya_penyakit,
+              pemeriksaan_penunjang: data.pemeriksaan_penunjang || prev.pemeriksaan_penunjang,
+              hasil_laborat: data.hasil_laborat || prev.hasil_laborat,
+              diagnosa_utama: data.diagnosa_utama || prev.diagnosa_utama,
+              kd_diagnosa_utama: data.kd_diagnosa_utama || prev.kd_diagnosa_utama,
+              diagnosa_sekunder: data.diagnosa_sekunder || prev.diagnosa_sekunder,
+              kd_diagnosa_sekunder: data.kd_diagnosa_sekunder || prev.kd_diagnosa_sekunder,
+              prosedur_utama: data.prosedur_utama || prev.prosedur_utama,
+              kd_prosedur_utama: data.kd_prosedur_utama || prev.kd_prosedur_utama,
+              kondisi_pulang: data.kondisi_pulang || prev.kondisi_pulang,
+              obat_pulang: data.obat_pulang || prev.obat_pulang,
+            }))
+          }
+        }
+      } catch (err) {
+        console.error("Gagal memuat resume:", err)
+      }
+    }
+    fetchResume()
   }, [noRawatJoined])
 
   const updateField = (field: string, value: string) => {
@@ -115,26 +186,48 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
     setTimeout(() => setSaveStatus('idle'), 3000)
   }
 
+  const handleSaveAsesmen = async (data: any) => {
+    setSaving(true)
+    try {
+      const result = await saveAsesmenIgdAction(noRawatJoined, data)
+      if (!result.success) throw new Error(result.error || 'Gagal menyimpan Asesmen')
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveTriase = async (data: any) => {
+    setSaving(true)
+    try {
+      const result = await saveTriaseIgdAction(noRawatJoined, data)
+      if (!result.success) throw new Error(result.error || 'Gagal menyimpan Triase')
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleGlobalSave = async (customData?: any) => {
     setSaving(true)
     setSaveStatus('idle')
     try {
-      if (activeTab === 'TRIASE') {
-        const res = await saveTriaseIgdAction(noRawatJoined, customData)
-        if (!res.success) throw new Error(res.error)
-      } else if (activeTab === 'ASESMEN_IGD') {
-        const res = await saveAsesmenIgdAction(noRawatJoined, formData)
-        if (!res.success) throw new Error(res.error)
-      } else if (activeTab === 'SOAP') {
-        const res = await saveSoapAction(noRawatJoined, formData)
-        if (!res.success) throw new Error(res.error)
+      if (activeTab === 'SOAP') {
+        await handleSaveSoap(formData)
       } else if (activeTab === 'RESEP') {
-        const res = await savePrescriptionFullAction(noRawatJoined, patient.kd_dokter, "ralan", standardMeds, compoundedMeds)
-        if (!res.success) throw new Error(res.error)
+        await handleSavePrescription()
       } else if (activeTab === 'LAB') {
-        await saveLabRequestAction({ no_rawat: noRawatJoined, tests: selectedLabTests.map(t => ({ kd_jenis_prw: t.kd_jenis_prw, id_templates: t.selectedTemplateIds || [] })), dokter_perujuk: patient.kd_dokter, diagnosa_klinis: labNotes.diagnosa, informasi_tambahan: labNotes.informasi })
+        await handleSaveLab()
       } else if (activeTab === 'RADIOLOGI') {
-        await saveRadiologyRequestAction({ no_rawat: noRawatJoined, tests: selectedRadTests.map(t => ({ kd_jenis_prw: t.kd_jenis_prw })), dokter_perujuk: patient.kd_dokter, diagnosa_klinis: radNotes.diagnosa, informasi_tambahan: radNotes.informasi })
+        await handleSaveRadiology()
       }
 
       setSaveStatus('success')
@@ -142,6 +235,94 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
     } catch (err: any) {
       setSaveStatus('error')
       setErrorMessage(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveSoap = async (data: any) => {
+    setSaving(true)
+    try {
+      const result = await saveSoapAction(noRawatJoined, { ...data, nip: patient?.kd_dokter })
+      if (!result.success) throw new Error(result.error || 'Gagal menyimpan SOAP')
+      setFormData(initialFormData)
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSavePrescription = async () => {
+    setSaving(true)
+    try {
+      const result = await savePrescriptionFullAction(
+        noRawatJoined,
+        patient.kd_dokter || "D0001",
+        "ralan",
+        standardMeds,
+        compoundedMeds
+      )
+      if (!result.success) throw new Error(result.error || 'Gagal menyimpan Resep')
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveLab = async () => {
+    setSaving(true)
+    try {
+      const result = await saveLabRequestAction({
+        no_rawat: noRawatJoined,
+        tests: selectedLabTests.map(t => ({
+          kd_jenis_prw: t.kd_jenis_prw,
+          id_templates: t.selectedTemplateIds || []
+        })),
+        dokter_perujuk: patient.kd_dokter || "D0001",
+        diagnosa_klinis: labNotes.diagnosa,
+        informasi_tambahan: labNotes.informasi
+      })
+      if (!result.success && typeof result === 'object' && 'error' in result) {
+         throw new Error(result.error || 'Gagal mengirim permintaan Lab')
+      }
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveRadiology = async () => {
+    setSaving(true)
+    try {
+      const result = await saveRadiologyRequestAction({
+        no_rawat: noRawatJoined,
+        tests: selectedRadTests.map(t => ({
+          kd_jenis_prw: t.kd_jenis_prw
+        })),
+        dokter_perujuk: patient.kd_dokter || "D0001",
+        diagnosa_klinis: radNotes.diagnosa,
+        informasi_tambahan: radNotes.informasi
+      })
+      if (!result.success && typeof result === 'object' && 'error' in result) {
+          throw new Error(result.error || 'Gagal mengirim permintaan Radiologi')
+      }
+      setSaveStatus('success')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    } catch (err: any) {
+      setErrorMessage(err.message)
+      setSaveStatus('error')
     } finally {
       setSaving(false)
     }
@@ -183,8 +364,6 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
 
         </div>
         <div className="flex items-center gap-3">
-          {saveStatus === 'success' && <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full text-[10px] font-black border border-emerald-100 uppercase tracking-widest">Berhasil Disimpan</div>}
-          {saveStatus === 'error' && <div className="bg-rose-50 text-rose-600 px-4 py-2 rounded-full text-[10px] font-black border border-rose-100 uppercase tracking-widest">{errorMessage}</div>}
         </div>
       </header>
 
@@ -206,12 +385,12 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
               variant="rose"
             />
             <div className={`transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
-            {activeTab === 'TRIASE' && <TriageTab noRawat={noRawatJoined} patient={patient} onSave={handleGlobalSave} />}
-            {activeTab === 'ASESMEN_IGD' && <AsesmenIgdTab formData={formData} updateField={updateField} />}
-            {activeTab === 'SOAP' && <SoapTab formData={formData} updateField={updateField} />}
-            {activeTab === 'RESEP' && <PrescriptionTab standardMeds={standardMeds} setStandardMeds={setStandardMeds} compoundedMeds={compoundedMeds} setCompoundedMeds={setCompoundedMeds} patient={patient} noRawat={noRawatJoined} />}
-            {activeTab === 'LAB' && <LabTab noRawat={noRawatJoined} kdDokter={patient.kd_dokter} selectedTests={selectedLabTests} setSelectedTests={setSelectedLabTests} notes={labNotes} setNotes={setLabNotes} />}
-            {activeTab === 'RADIOLOGI' && <RadiologiTab noRawat={noRawatJoined} kdDokter={patient.kd_dokter} selectedTests={selectedRadTests} setSelectedTests={setSelectedRadTests} notes={radNotes} setNotes={setRadNotes} />}
+            {activeTab === 'TRIASE' && <TriageTab noRawat={noRawatJoined} patient={patient} onSave={handleSaveTriase} isSaving={saving} />}
+             {activeTab === 'ASESMEN_IGD' && <AsesmenIgdTab formData={formData} updateField={updateField} onSave={() => handleSaveAsesmen(formData)} isSaving={saving} />}
+             {activeTab === 'SOAP' && <SoapTab formData={formData} updateField={updateField} onSave={handleSaveSoap} isSaving={saving} />}
+             {activeTab === 'RESEP' && <PrescriptionTab standardMeds={standardMeds} setStandardMeds={setStandardMeds} compoundedMeds={compoundedMeds} setCompoundedMeds={setCompoundedMeds} patient={patient} noRawat={noRawatJoined} onSave={handleSavePrescription} isSaving={saving} />}
+             {activeTab === 'LAB' && <LabTab noRawat={noRawatJoined} kdDokter={patient.kd_dokter} selectedTests={selectedLabTests} setSelectedTests={setSelectedLabTests} notes={labNotes} setNotes={setLabNotes} onSave={handleSaveLab} isSaving={saving} />}
+             {activeTab === 'RADIOLOGI' && <RadiologiTab noRawat={noRawatJoined} kdDokter={patient.kd_dokter} selectedTests={selectedRadTests} setSelectedTests={setSelectedRadTests} notes={radNotes} setNotes={setRadNotes} onSave={handleSaveRadiology} isSaving={saving} />}
             {activeTab === 'HASIL_LAB' && <HasilLabTab noRawat={noRawatJoined} />}
             {activeTab === 'HASIL_RAD' && <HasilRadTab noRawat={noRawatJoined} />}
             { activeTab === 'RESUME' && (
@@ -228,14 +407,6 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
                />
             )}
 
-            {activeTabInfo.saveLabel && activeTab !== 'TRIASE' && (
-              <div className="mt-8 flex justify-end">
-                <button onClick={() => handleGlobalSave()} disabled={saving} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs hover:bg-blue-600 transition-all flex items-center gap-3">
-                  {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save className="w-5 h-5" />}
-                  {activeTabInfo.saveLabel.toUpperCase()}
-                </button>
-              </div>
-            )}
             </div>
           </div>
         </main>

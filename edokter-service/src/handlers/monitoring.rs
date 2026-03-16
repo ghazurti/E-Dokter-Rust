@@ -7,7 +7,7 @@ pub async fn get_monitoring(
 ) -> Result<Json<Vec<MonitoringResep>>, (StatusCode, String)> {
     // We fetch resep joined with pasien and dokter
     let resep_list = sqlx::query(
-        "SELECT r.no_resep, r.tgl_perawatan, p.nm_pasien, d.nm_dokter
+        "SELECT r.no_resep, CAST(r.tgl_perawatan AS CHAR) as tgl_perawatan, p.nm_pasien, d.nm_dokter
          FROM resep_obat r
          LEFT JOIN reg_periksa rp ON r.no_rawat = rp.no_rawat
          LEFT JOIN pasien p ON rp.no_rkm_medis = p.no_rkm_medis
@@ -22,7 +22,7 @@ pub async fn get_monitoring(
     use sqlx::Row;
     for r in resep_list {
         let no_resep: String = r.get("no_resep");
-        let tgl_perawatan: Option<chrono::NaiveDate> = r.get("tgl_perawatan");
+        let tgl_perawatan: Option<String> = r.get("tgl_perawatan");
         let nm_pasien: Option<String> = r.get("nm_pasien");
         let nm_dokter: Option<String> = r.get("nm_dokter");
 

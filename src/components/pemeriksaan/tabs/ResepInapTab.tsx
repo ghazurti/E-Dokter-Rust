@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Pill, Plus, Trash2, Search, ShoppingCart, Clock, Send, RotateCcw, Box, AlertCircle, Copy, Loader2 } from 'lucide-react'
+import { Pill, Plus, Trash2, Search, ShoppingCart, Clock, Send, RotateCcw, Box, AlertCircle, Copy, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { AturanPakaiSelect } from '../AturanPakaiSelect'
 import { searchMedicineAction, getMetodeRacikAction, getLastPrescriptionAction, getMedicineRestrictionsAction } from '@/app/pasien-rawat-jalan/actions'
 
 interface ResepInapTabProps {
@@ -11,14 +12,26 @@ interface ResepInapTabProps {
   setCompoundedMeds: (meds: any[]) => void
   noRawat: string
   patient?: any
+  onSave?: () => Promise<void>
+  isSaving?: boolean
 }
 
-export default function ResepInapTab({ standardMeds, setStandardMeds, compoundedMeds, setCompoundedMeds, noRawat, patient }: ResepInapTabProps) {
+export default function ResepInapTab({ 
+  standardMeds, 
+  setStandardMeds, 
+  compoundedMeds, 
+  setCompoundedMeds, 
+  noRawat, 
+  patient,
+  onSave,
+  isSaving
+}: ResepInapTabProps) {
   const [resepSubTab, setResepSubTab] = useState<'standar' | 'racikan'>('standar')
   const [medSearch, setMedSearch] = useState('')
   const [medResults, setMedResults] = useState<any[]>([])
   const [metodeRacik, setMetodeRacik] = useState<any[]>([])
   const [isCopying, setIsCopying] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const searchObat = async (q: string) => {
     setMedSearch(q);
@@ -201,18 +214,14 @@ export default function ResepInapTab({ standardMeds, setStandardMeds, compounded
                                             />
                                         </td>
                                         <td className="p-5">
-                                            <div className="relative">
-                                                <input 
-                                                    className="w-full p-3 pl-10 border-2 border-slate-50 rounded-xl text-xs font-bold bg-slate-50 focus:border-blue-500 bg-white outline-none shadow-sm" 
-                                                    value={m.aturan_pakai}
-                                                    onChange={(e) => {
-                                                        const next = [...standardMeds];
-                                                        next[idx].aturan_pakai = e.target.value;
-                                                        setStandardMeds(next);
-                                                    }}
-                                                />
-                                                <Clock className="w-4 h-4 text-slate-200 absolute left-3.5 top-3" />
-                                            </div>
+                                            <AturanPakaiSelect 
+                                                value={m.aturan_pakai}
+                                                onChange={(val) => {
+                                                    const next = [...standardMeds];
+                                                    next[idx].aturan_pakai = val;
+                                                    setStandardMeds(next);
+                                                }}
+                                            />
                                         </td>
                                         <td className="p-5 text-right">
                                             <button 
@@ -371,19 +380,15 @@ export default function ResepInapTab({ standardMeds, setStandardMeds, compounded
                             <div className="flex flex-col md:flex-row justify-between items-center gap-10 pt-10 border-t-2 border-slate-50">
                                 <div className="w-full flex-1">
                                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 block px-2">Aturan Pakai Racikan</label>
-                                    <div className="relative">
-                                        <input 
-                                            placeholder="Contoh: 3 x 1 Sesudah Makan"
-                                            className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-14 py-5 text-base font-black text-slate-700 outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
-                                            value={racik.aturan_pakai}
-                                            onChange={(e) => {
-                                                const next = [...compoundedMeds];
-                                                next[rIdx].aturan_pakai = e.target.value;
-                                                setCompoundedMeds(next);
-                                            }}
-                                        />
-                                        <Clock className="w-6 h-6 text-slate-300 absolute left-5 top-4.5" />
-                                    </div>
+                                    <AturanPakaiSelect 
+                                        value={racik.aturan_pakai}
+                                        placeholder="Contoh: 3 x 1 Sesudah Makan"
+                                        onChange={(val) => {
+                                            const next = [...compoundedMeds];
+                                            next[rIdx].aturan_pakai = val;
+                                            setCompoundedMeds(next);
+                                        }}
+                                    />
                                 </div>
                                 <button 
                                     onClick={() => setCompoundedMeds(compoundedMeds.filter((_, i) => i !== rIdx))}
@@ -405,6 +410,55 @@ export default function ResepInapTab({ standardMeds, setStandardMeds, compounded
           )}
         </div>
       </div>
+
+      <div className="pt-8 flex justify-end">
+        <button 
+          onClick={() => setShowConfirmModal(true)}
+          disabled={isSaving || (standardMeds.length === 0 && compoundedMeds.length === 0)}
+          className="bg-slate-900 text-white px-12 py-5 rounded-[2.5rem] font-black text-xs hover:bg-blue-600 transition-all flex items-center gap-4 shadow-2xl active:scale-95 disabled:opacity-50 min-w-[200px] justify-center"
+        >
+          {isSaving ? (
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <Send className="w-6 h-6 text-blue-400" />
+          )}
+          {isSaving ? 'Mengirim Resep...' : 'Kirim Ke Farmasi'}
+        </button>
+      </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto mb-2">
+                <Pill className="w-10 h-10 text-blue-600" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Konfirmasi Resep 💊</h3>
+                <p className="text-sm font-bold text-slate-500 leading-relaxed">Apakah obatnya sudah benar?</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <button 
+                  onClick={() => setShowConfirmModal(false)}
+                  className="px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <XCircle className="w-4 h-4" /> Tidak
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    if (onSave) onSave();
+                  }}
+                  className="px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest bg-blue-600 text-white hover:bg-slate-900 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Ya, Benar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

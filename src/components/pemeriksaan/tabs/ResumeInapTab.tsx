@@ -7,6 +7,8 @@ import { getResumeInapAction, saveResumeInapAction } from '@/app/pasien-rawat-in
 export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAiLoading, setIsAiLoading] = useState(false)
+  const [glowFields, setGlowFields] = useState<string[]>([])
   const [data, setData] = useState<any>({
     no_rawat: noRawat,
     kd_dokter: kdDokter || '',
@@ -67,6 +69,40 @@ export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
     setData((prev: any) => ({ ...prev, [field]: value }))
   }
 
+  const handleAiAutoFill = async () => {
+    setIsAiLoading(true)
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_RUST_SERVICE_URL}/ai/resume-summary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ no_rawat: noRawat.replace(/\//g, '-') })
+      })
+      if (!resp.ok) {
+        const errorText = await resp.text()
+        throw new Error(`Error ${resp.status}: ${errorText}`)
+      }
+      const aiData = await resp.json()
+
+      const newFields: string[] = []
+      const updatedData = { ...data }
+
+      Object.keys(aiData).forEach(key => {
+        if (aiData[key]) {
+          updatedData[key] = aiData[key]
+          newFields.push(key)
+        }
+      })
+
+      setData(updatedData)
+      setGlowFields(newFields)
+      setTimeout(() => setGlowFields([]), 3000)
+    } catch (error: any) {
+      alert(error.message)
+    } finally {
+      setIsAiLoading(false)
+    }
+  }
+
   const handleSave = async () => {
     setIsSaving(true)
     try {
@@ -109,6 +145,23 @@ export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
             <InfoItem label="Masuk" value={patient?.tgl_registrasi || '-'} icon={<Calendar className="w-4 h-4" />} />
             <InfoItem label="Jam" value={patient?.jam_reg || '-'} icon={<Clock className="w-4 h-4" />} />
           </div>
+          {/* AI Auto-Fill Button */}
+          <button 
+            onClick={handleAiAutoFill}
+            disabled={isAiLoading}
+            className={`mt-2 flex items-center justify-center gap-2 w-full p-3 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all shadow-lg ${
+              isAiLoading 
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:scale-[1.02] active:scale-95 shadow-indigo-100'
+            }`}
+          >
+            {isAiLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            AI Auto-Fill Resume (CPPT Review)
+          </button>
         </div>
         <div className="space-y-4 flex flex-col justify-between">
            <div className="grid grid-cols-1 gap-4">
@@ -137,16 +190,19 @@ export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
                 label="Keluhan Utama & Riwayat Penyakit" 
                 value={data.keluhan_utama} 
                 onChange={(v) => updateField('keluhan_utama', v)} 
+                isGlow={glowFields.includes('keluhan_utama')}
               />
               <ResumeTextArea 
                 label="Pemeriksaan Fisik" 
                 value={data.pemeriksaan_fisik} 
                 onChange={(v) => updateField('pemeriksaan_fisik', v)} 
+                isGlow={glowFields.includes('pemeriksaan_fisik')}
               />
               <ResumeTextArea 
                 label="Jalannya Penyakit Selama Perawatan" 
                 value={data.jalannya_penyakit} 
                 onChange={(v) => updateField('jalannya_penyakit', v)} 
+                isGlow={glowFields.includes('jalannya_penyakit')}
               />
             </div>
           </ResumeSection>
@@ -157,11 +213,13 @@ export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
                 label="Pemeriksaan Penunjang Rad Terpenting" 
                 value={data.pemeriksaan_penunjang} 
                 onChange={(v) => updateField('pemeriksaan_penunjang', v)} 
+                isGlow={glowFields.includes('pemeriksaan_penunjang')}
               />
               <ResumeTextArea 
                 label="Pemeriksaan Penunjang Lab Terpenting" 
                 value={data.hasil_laborat} 
                 onChange={(v) => updateField('hasil_laborat', v)} 
+                isGlow={glowFields.includes('hasil_laborat')}
               />
               <ResumeTextArea 
                 label="Hasil Lab Yang Belum Selesai (Pending)" 
@@ -177,11 +235,13 @@ export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
                 label="Tindakan/Operasi Selama Perawatan" 
                 value={data.tindakan_dan_operasi} 
                 onChange={(v) => updateField('tindakan_dan_operasi', v)} 
+                isGlow={glowFields.includes('tindakan_dan_operasi')}
               />
               <ResumeTextArea 
                 label="Obat-obatan Selama Perawatan" 
                 value={data.obat_di_rs} 
                 onChange={(v) => updateField('obat_di_rs', v)} 
+                isGlow={glowFields.includes('obat_di_rs')}
               />
             </div>
           </ResumeSection>
@@ -192,14 +252,14 @@ export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
           <ResumeSection title="Diagnosa & Prosedur (Coding)" icon={<ClipboardList className="text-purple-600" />}>
             <div className="space-y-4">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Diagnosa Akhir</p>
-              <CodingItem label="Diagnosa Utama" textValue={data.diagnosa_utama} textChange={(v) => updateField('diagnosa_utama', v)} codeValue={data.kd_diagnosa_utama} codeChange={(v) => updateField('kd_diagnosa_utama', v)} />
-              <CodingItem label="Diagnosa Sekunder 1" textValue={data.diagnosa_sekunder} textChange={(v) => updateField('diagnosa_sekunder', v)} codeValue={data.kd_diagnosa_sekunder} codeChange={(v) => updateField('kd_diagnosa_sekunder', v)} />
+              <CodingItem label="Diagnosa Utama" textValue={data.diagnosa_utama} textChange={(v) => updateField('diagnosa_utama', v)} codeValue={data.kd_diagnosa_utama} codeChange={(v) => updateField('kd_diagnosa_utama', v)} isGlow={glowFields.includes('diagnosa_utama')} />
+              <CodingItem label="Diagnosa Sekunder 1" textValue={data.diagnosa_sekunder} textChange={(v) => updateField('diagnosa_sekunder', v)} codeValue={data.kd_diagnosa_sekunder} codeChange={(v) => updateField('kd_diagnosa_sekunder', v)} isGlow={glowFields.includes('diagnosa_sekunder')} />
               <CodingItem label="Diagnosa Sekunder 2" textValue={data.diagnosa_sekunder2} textChange={(v) => updateField('diagnosa_sekunder2', v)} codeValue={data.kd_diagnosa_sekunder2} codeChange={(v) => updateField('kd_diagnosa_sekunder2', v)} />
               <CodingItem label="Diagnosa Sekunder 3" textValue={data.diagnosa_sekunder3} textChange={(v) => updateField('diagnosa_sekunder3', v)} codeValue={data.kd_diagnosa_sekunder3} codeChange={(v) => updateField('kd_diagnosa_sekunder3', v)} />
               <CodingItem label="Diagnosa Sekunder 4" textValue={data.diagnosa_sekunder4} textChange={(v) => updateField('diagnosa_sekunder4', v)} codeValue={data.kd_diagnosa_sekunder4} codeChange={(v) => updateField('kd_diagnosa_sekunder4', v)} />
               
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2 mt-6">Prosedur / Tindakan</p>
-              <CodingItem label="Prosedur Utama" textValue={data.prosedur_utama} textChange={(v) => updateField('prosedur_utama', v)} codeValue={data.kd_prosedur_utama} codeChange={(v) => updateField('kd_prosedur_utama', v)} />
+              <CodingItem label="Prosedur Utama" textValue={data.prosedur_utama} textChange={(v) => updateField('prosedur_utama', v)} codeValue={data.kd_prosedur_utama} codeChange={(v) => updateField('kd_prosedur_utama', v)} isGlow={glowFields.includes('prosedur_utama')} />
               <CodingItem label="Prosedur Sekunder 1" textValue={data.prosedur_sekunder} textChange={(v) => updateField('prosedur_sekunder', v)} codeValue={data.kd_prosedur_sekunder} codeChange={(v) => updateField('kd_prosedur_sekunder', v)} />
               <CodingItem label="Prosedur Sekunder 2" textValue={data.prosedur_sekunder2} textChange={(v) => updateField('prosedur_sekunder2', v)} codeValue={data.kd_prosedur_sekunder2} codeChange={(v) => updateField('kd_prosedur_sekunder2', v)} />
               <CodingItem label="Prosedur Sekunder 3" textValue={data.prosedur_sekunder3} textChange={(v) => updateField('prosedur_sekunder3', v)} codeValue={data.kd_prosedur_sekunder3} codeChange={(v) => updateField('kd_prosedur_sekunder3', v)} />
@@ -229,7 +289,7 @@ export default function ResumeInapTab({ noRawat, patient, kdDokter }: any) {
                  <ResumeInput label="Keterangan Dilanjutkan" value={data.ket_dilanjutkan} onChange={(v) => updateField('ket_dilanjutkan', v)} />
               </div>
               <ResumeInput label="Tanggal & Jam Kontrol" type="datetime-local" value={data.kontrol} onChange={(v) => updateField('kontrol', v)} />
-              <ResumeTextArea label="Obat Pulang" value={data.obat_pulang} onChange={(v) => updateField('obat_pulang', v)} />
+              <ResumeTextArea label="Obat Pulang" value={data.obat_pulang} onChange={(v) => updateField('obat_pulang', v)} isGlow={glowFields.includes('obat_pulang')} />
             </div>
           </ResumeSection>
         </div>
@@ -269,19 +329,21 @@ function InfoItem({ label, value, icon }: any) {
   )
 }
 
-function CodingItem({ label, textValue, textChange, codeValue, codeChange }: any) {
+function CodingItem({ label, textValue, textChange, codeValue, codeChange, isGlow }: any) {
+  const glowClass = isGlow ? "animate-pulse border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)] bg-white" : "border-slate-50 bg-slate-50"
+
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
       <div className="flex gap-2">
         <input 
-          className="flex-1 p-3 border-2 border-slate-50 rounded-2xl text-[11px] font-bold bg-slate-50 focus:border-blue-500 focus:bg-white transition-all outline-none"
+          className={`flex-1 p-3 border-2 rounded-2xl text-[11px] font-bold focus:border-blue-500 focus:bg-white transition-all outline-none ${glowClass}`}
           value={textValue || ''}
           onChange={(e) => textChange(e.target.value)}
           placeholder="Nama Diagnosa/Prosedur..."
         />
         <input 
-          className="w-24 p-3 border-2 border-slate-50 rounded-2xl text-[11px] font-black bg-slate-100 text-center focus:border-blue-500 focus:bg-white transition-all outline-none"
+          className={`w-24 p-3 border-2 border-slate-50 rounded-2xl text-[11px] font-black text-center focus:border-blue-500 focus:bg-white transition-all outline-none ${isGlow ? 'bg-white border-blue-400' : 'bg-slate-100'}`}
           value={codeValue || ''}
           onChange={(e) => codeChange(e.target.value)}
           placeholder="KODE"
@@ -291,13 +353,15 @@ function CodingItem({ label, textValue, textChange, codeValue, codeChange }: any
   )
 }
 
-function ResumeInput({ label, value, onChange, type = "text", placeholder = "" }: any) {
+function ResumeInput({ label, value, onChange, type = "text", placeholder = "", isGlow }: any) {
+  const glowClass = isGlow ? "animate-pulse border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] bg-white" : "border-slate-50 bg-slate-50"
+
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
       <input 
         type={type}
-        className="w-full p-3 border-2 border-slate-50 rounded-2xl text-[11px] font-bold bg-slate-50 focus:border-blue-500 focus:bg-white transition-all outline-none"
+        className={`w-full p-3 border-2 rounded-2xl text-[11px] font-bold focus:border-blue-500 focus:bg-white transition-all outline-none ${glowClass}`}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -306,12 +370,14 @@ function ResumeInput({ label, value, onChange, type = "text", placeholder = "" }
   )
 }
 
-function ResumeTextArea({ label, value, onChange, placeholder = "" }: any) {
+function ResumeTextArea({ label, value, onChange, placeholder = "", isGlow }: any) {
+  const glowClass = isGlow ? "animate-pulse border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)] bg-white" : "border-slate-50 bg-slate-50"
+
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
       <textarea 
-        className="w-full p-4 border-2 border-slate-50 rounded-[24px] text-[11px] font-medium bg-slate-50 focus:border-blue-500 focus:bg-white transition-all outline-none min-h-[100px] leading-relaxed"
+        className={`w-full p-4 border-2 rounded-[24px] text-[11px] font-medium focus:border-blue-500 focus:bg-white transition-all outline-none min-h-[100px] leading-relaxed ${glowClass}`}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

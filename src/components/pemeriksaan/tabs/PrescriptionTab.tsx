@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { searchMedicineAction, getMetodeRacikAction, getMedicineRestrictionsAction } from '@/app/pasien-rawat-jalan/actions'
-import { AlertCircle, Search, Plus, Trash2, Box, Pill } from 'lucide-react'
+import { AlertCircle, Search, Plus, Trash2, Box, Pill, CheckCircle2, XCircle } from 'lucide-react'
+import { AturanPakaiSelect } from '../AturanPakaiSelect'
 
 interface PrescriptionTabProps {
   standardMeds: any[]
@@ -11,14 +12,26 @@ interface PrescriptionTabProps {
   setCompoundedMeds: (meds: any[]) => void
   patient?: any
   noRawat: string
+  onSave?: () => Promise<void>
+  isSaving?: boolean
 }
 
-export function PrescriptionTab({ standardMeds, setStandardMeds, compoundedMeds, setCompoundedMeds, patient, noRawat }: PrescriptionTabProps) {
+export function PrescriptionTab({ 
+  standardMeds, 
+  setStandardMeds, 
+  compoundedMeds, 
+  setCompoundedMeds, 
+  patient, 
+  noRawat,
+  onSave,
+  isSaving
+}: PrescriptionTabProps) {
   const [resepTab, setResepTab] = useState<'standar' | 'racikan'>('standar')
   const [medSearch, setMedSearch] = useState('')
   const [medResults, setMedResults] = useState<any[]>([])
   const [metodeRacik, setMetodeRacik] = useState<any[]>([])
   const [restrictionAlert, setRestrictionAlert] = useState<{msg: string, color: string} | null>(null)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const handleSelectMed = async (med: any, rIdx?: number) => {
     // BPJS Restriction Logic
@@ -138,13 +151,11 @@ export function PrescriptionTab({ standardMeds, setStandardMeds, compoundedMeds,
                       />
                    </div>
                    <div className="flex-1">
-                      <input 
-                         placeholder="Aturan Pakai..."
-                         className="w-full bg-slate-50 border-none rounded-xl px-5 py-3 font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500"
+                      <AturanPakaiSelect 
                          value={m.aturan_pakai}
-                         onChange={(e) => {
+                         onChange={(val) => {
                             const next = [...standardMeds];
-                            next[idx].aturan_pakai = e.target.value;
+                            next[idx].aturan_pakai = val;
                             setStandardMeds(next);
                          }}
                       />
@@ -284,20 +295,19 @@ export function PrescriptionTab({ standardMeds, setStandardMeds, compoundedMeds,
                       </div>
                    </div>
 
-                   <div className="flex justify-between items-center gap-6 pt-6 border-t border-slate-50">
-                      <div className="flex-1">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Aturan Pakai</label>
-                         <input 
-                            placeholder="Contoh: 3 x 1 Sesudah Makan"
-                            className="w-full bg-slate-50 border-none rounded-xl px-5 py-3 font-bold text-slate-700 text-sm focus:ring-2 focus:ring-emerald-500"
-                            value={racik.aturan_pakai}
-                            onChange={(e) => {
-                               const next = [...compoundedMeds];
-                               next[rIdx].aturan_pakai = e.target.value;
-                               setCompoundedMeds(next);
-                            }}
-                         />
-                      </div>
+                    <div className="flex justify-between items-center gap-6 pt-6 border-t border-slate-50">
+                       <div className="flex-1">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block px-1">Aturan Pakai</label>
+                          <AturanPakaiSelect 
+                             value={racik.aturan_pakai}
+                             placeholder="Contoh: 3 x 1 Sesudah Makan"
+                             onChange={(val) => {
+                                const next = [...compoundedMeds];
+                                next[rIdx].aturan_pakai = val;
+                                setCompoundedMeds(next);
+                             }}
+                          />
+                       </div>
                       <button 
                          onClick={() => setCompoundedMeds(compoundedMeds.filter((_, i) => i !== rIdx))}
                          className="flex items-center gap-2 text-red-400 hover:text-red-600 font-black text-[10px] tracking-widest uppercase transition-colors"
@@ -309,6 +319,55 @@ export function PrescriptionTab({ standardMeds, setStandardMeds, compoundedMeds,
                 </div>
               ))}
            </div>
+        </div>
+      )}
+
+      <div className="pt-8 flex justify-end">
+        <button 
+          onClick={() => setShowConfirmModal(true)}
+          disabled={isSaving || (standardMeds.length === 0 && compoundedMeds.length === 0)}
+          className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs hover:bg-blue-600 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 min-w-[200px] justify-center"
+        >
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <Pill className="w-5 h-5 text-blue-400" />
+          )}
+          {isSaving ? 'Mengirim Resep...' : 'Kirim Ke Farmasi'}
+        </button>
+      </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center space-y-6">
+              <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mx-auto mb-2">
+                <Pill className="w-10 h-10 text-blue-600" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Konfirmasi Resep 💊</h3>
+                <p className="text-sm font-bold text-slate-500 leading-relaxed">Apakah obatnya sudah benar?</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <button 
+                  onClick={() => setShowConfirmModal(false)}
+                  className="px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                >
+                  <XCircle className="w-4 h-4" /> Tidak
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    if (onSave) onSave();
+                  }}
+                  className="px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Ya, Benar
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

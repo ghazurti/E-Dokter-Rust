@@ -20,7 +20,7 @@ pub async fn get_ranap_patients(
 
     let mut sql = String::from(
         "SELECT ki.no_rawat, reg.no_rkm_medis, p.nm_pasien, d.nm_dokter, 
-                concat(ki.kd_kamar, ' ', b.nm_bangsal) as kamar, k.kelas, ki.tgl_masuk,
+                concat(ki.kd_kamar, ' ', b.nm_bangsal) as kamar, k.kelas, CAST(ki.tgl_masuk AS CHAR) as tgl_masuk,
                 (SELECT COUNT(*) FROM periksa_lab WHERE no_rawat = ki.no_rawat AND tgl_periksa >= DATE_SUB(CURDATE(), INTERVAL 2 DAY)) as has_lab
          FROM kamar_inap ki
          JOIN reg_periksa reg ON ki.no_rawat = reg.no_rawat

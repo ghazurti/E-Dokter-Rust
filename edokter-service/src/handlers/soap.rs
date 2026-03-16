@@ -61,7 +61,7 @@ pub async fn save_soap(
     .bind(&payload.penilaian)
     .bind(&payload.instruksi)
     .bind(&payload.evaluasi)
-    .bind(payload.nip.as_deref().unwrap_or("P0001"))
+    .bind(payload.nip)
     .execute(&mut *tx)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -124,7 +124,7 @@ pub async fn save_soap_ranap(
     .bind(&payload.penilaian)
     .bind(&payload.instruksi)
     .bind(&payload.evaluasi)
-    .bind(payload.nip.as_deref().unwrap_or("P0001"))
+    .bind(payload.nip)
     .execute(&mut *tx)
     .await
     .map_err(|e| {
@@ -145,7 +145,9 @@ pub async fn get_soap_history(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let results = sqlx::query(
-        "SELECT tgl_perawatan, jam_rawat, suhu_tubuh, tensi, nadi, respirasi, 
+        "SELECT CAST(tgl_perawatan AS CHAR) as tgl_perawatan, 
+                CAST(jam_rawat AS CHAR) as jam_rawat, 
+                suhu_tubuh, tensi, nadi, respirasi, 
                 tinggi, berat, spo2, gcs, kesadaran, keluhan, pemeriksaan, alergi, 
                 rtl, penilaian, instruksi, evaluasi, nip
          FROM pemeriksaan_ranap 
@@ -161,8 +163,8 @@ pub async fn get_soap_history(
     for row in results {
         use sqlx::Row;
         history.push(serde_json::json!({
-            "tgl_perawatan": row.get::<chrono::NaiveDate, _>("tgl_perawatan").to_string(),
-            "jam_rawat": row.get::<chrono::NaiveTime, _>("jam_rawat").to_string(),
+            "tgl_perawatan": row.get::<Option<String>, _>("tgl_perawatan").unwrap_or_default(),
+            "jam_rawat": row.get::<Option<String>, _>("jam_rawat").unwrap_or_default(),
             "suhu": row.get::<String, _>("suhu_tubuh"),
             "tensi": row.get::<String, _>("tensi"),
             "nadi": row.get::<String, _>("nadi"),
@@ -213,7 +215,10 @@ pub async fn get_latest_pemeriksaan_ralan(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PemeriksaanRalan>(
-        "SELECT * FROM pemeriksaan_ralan 
+        "SELECT no_rawat, CAST(tgl_perawatan AS CHAR) as tgl_perawatan, CAST(jam_rawat AS CHAR) as jam_rawat, 
+         suhu_tubuh, tensi, nadi, respirasi, tinggi, berat, spo2, gcs, kesadaran, keluhan, pemeriksaan, 
+         alergi, lingkar_perut, lingkar_kepala, lingkar_dada, rtl, penilaian, instruksi, evaluasi, nip
+         FROM pemeriksaan_ralan 
          WHERE no_rawat = ? 
          ORDER BY tgl_perawatan DESC, jam_rawat DESC 
          LIMIT 1"
@@ -233,7 +238,7 @@ pub async fn get_penilaian_medis_umum(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisUmum>(
-        "SELECT * FROM penilaian_medis_ralan WHERE no_rawat = ?"
+        "SELECT no_rawat, CAST(tanggal AS CHAR) as tanggal, kd_dokter, anamnesis, hubungan, keluhan_utama, rps, rpd, rpo, alergi, keadaan, kesadaran, gcs, td, nadi, rr, suhu, bb, tb, bmi, keluhan, kepala, mata, tht, mulut, leher, thoraks, jantung, paru, abdomen, genital, ekstremitas, kulit, ket_fisik, ket_lokalis, penunjang, diagnosis, tata, konsulrujuk FROM penilaian_medis_ralan WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -312,7 +317,7 @@ pub async fn get_penilaian_medis_anak(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisAnak>(
-        "SELECT * FROM penilaian_medis_ralan_anak WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_anak WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -388,7 +393,7 @@ pub async fn get_penilaian_medis_kandungan(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisKandungan>(
-        "SELECT * FROM penilaian_medis_ralan_kandungan WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_kandungan WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -472,7 +477,7 @@ pub async fn get_penilaian_medis_bedah(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisBedah>(
-        "SELECT * FROM penilaian_medis_ralan_bedah WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_bedah WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -545,7 +550,7 @@ pub async fn get_penilaian_medis_tht(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisTHT>(
-        "SELECT * FROM penilaian_medis_ralan_tht WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_tht WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -616,7 +621,7 @@ pub async fn get_penilaian_medis_mata(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisMata>(
-        "SELECT * FROM penilaian_medis_ralan_mata WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_mata WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -711,7 +716,7 @@ pub async fn get_penilaian_medis_neurologi(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisNeurologi>(
-        "SELECT * FROM penilaian_medis_ralan_neurologi WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_neurologi WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -792,7 +797,7 @@ pub async fn get_penilaian_medis_paru(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisParu>(
-        "SELECT * FROM penilaian_medis_ralan_paru WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_paru WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -866,7 +871,7 @@ pub async fn get_penilaian_medis_jantung(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisJantung>(
-        "SELECT * FROM penilaian_medis_ralan_jantung WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_jantung WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -942,7 +947,7 @@ pub async fn get_penilaian_medis_bedah_mulut(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisBedahMulut>(
-        "SELECT * FROM penilaian_medis_ralan_bedah_mulut WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_bedah_mulut WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1025,7 +1030,7 @@ pub async fn get_penilaian_medis_psikiatrik(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisPsikiatrik>(
-        "SELECT * FROM penilaian_medis_ralan_psikiatrik WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_psikiatrik WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1109,7 +1114,7 @@ pub async fn get_penilaian_medis_orthopedi(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisOrthopedi>(
-        "SELECT * FROM penilaian_medis_ralan_orthopedi WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_orthopedi WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1187,7 +1192,7 @@ pub async fn get_penilaian_medis_urologi(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisUrologi>(
-        "SELECT * FROM penilaian_medis_ralan_urologi WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_urologi WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1272,7 +1277,7 @@ pub async fn get_penilaian_medis_geriatri(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisGeriatri>(
-        "SELECT * FROM penilaian_medis_ralan_geriatri WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_geriatri WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1358,7 +1363,7 @@ pub async fn get_penilaian_medis_rehab_medik(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisRehabMedik>(
-        "SELECT * FROM penilaian_medis_ralan_rehab_medik WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_rehab_medik WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1452,7 +1457,7 @@ pub async fn get_penilaian_medis_kulitdankelamin(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisKulitKelamin>(
-        "SELECT * FROM penilaian_medis_ralan_kulitdankelamin WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_kulitdankelamin WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1519,7 +1524,7 @@ pub async fn get_penilaian_medis_gd_psikiatri(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianMedisGDPsikiatri>(
-        "SELECT * FROM penilaian_medis_ralan_gawat_darurat_psikiatri WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_gawat_darurat_psikiatri WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1653,7 +1658,7 @@ pub async fn get_penilaian_medis_penyakit_dalam(
     let no_rawat = no_rawat_raw.replace("-", "/");
     
     let result = sqlx::query_as::<_, PenilaianPenyakitDalamCustom>(
-        "SELECT * FROM penilaian_medis_ralan_penyakit_dalam WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_ralan_penyakit_dalam WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool)
@@ -1875,7 +1880,7 @@ pub async fn get_penilaian_medis_igd(
 ) -> Result<Json<Option<crate::models::soap::PenilaianMedisIgd>>, (StatusCode, String)> {
     let no_rawat = no_rawat_raw.replace("-", "/");
     let result = sqlx::query_as::<_, crate::models::soap::PenilaianMedisIgd>(
-        "SELECT * FROM penilaian_medis_igd WHERE no_rawat = ?"
+        "SELECT *, CAST(tanggal AS CHAR) as tanggal FROM penilaian_medis_igd WHERE no_rawat = ?"
     )
     .bind(&no_rawat)
     .fetch_optional(&pool).await

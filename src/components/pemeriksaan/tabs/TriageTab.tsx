@@ -7,9 +7,10 @@ interface TriageTabProps {
   noRawat: string
   patient: any
   onSave: (data: any) => Promise<void>
+  isSaving?: boolean
 }
 
-export function TriageTab({ noRawat, patient, onSave }: TriageTabProps) {
+export function TriageTab({ noRawat, patient, onSave, isSaving }: TriageTabProps) {
   const [master, setMaster] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeSubTab, setActiveSubTab] = useState<'primer' | 'sekunder'>('primer')
@@ -308,10 +309,15 @@ export function TriageTab({ noRawat, patient, onSave }: TriageTabProps) {
       <div className="fixed bottom-10 right-10 z-50">
         <button 
           onClick={() => onSave(triageData)}
-          className="bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black shadow-2xl hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-3"
+          disabled={isSaving}
+          className="bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-black shadow-2xl hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50"
         >
-          <Save className="w-5 h-5 text-blue-400" />
-          SIMPAN TRIASE IGD
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <Save className="w-5 h-5 text-blue-400" />
+          )}
+          {isSaving ? 'Menyimpan...' : 'SIMPAN TRIASE IGD'}
         </button>
       </div>
     </div>

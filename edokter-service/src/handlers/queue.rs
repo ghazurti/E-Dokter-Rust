@@ -22,7 +22,7 @@ pub async fn get_queue(
     let tgl_selesai = params.tgl_selesai.as_deref().unwrap_or(params.tgl.as_deref().unwrap_or(&today));
     
     let mut sql = String::from(
-        "SELECT r.no_reg, r.no_rawat, r.tgl_registrasi, r.jam_reg, r.stts,
+        "SELECT r.no_reg, r.no_rawat, CAST(r.tgl_registrasi AS CHAR) as tgl_registrasi, CAST(r.jam_reg AS CHAR) as jam_reg, r.stts,
          p.nm_pasien, p.no_rkm_medis, d.nm_dokter, pk.nm_poli, pj.png_jawab,
          (SELECT COUNT(*) FROM periksa_lab WHERE no_rawat = r.no_rawat AND tgl_periksa >= DATE_SUB(CURDATE(), INTERVAL 2 DAY)) as has_lab
          FROM reg_periksa r

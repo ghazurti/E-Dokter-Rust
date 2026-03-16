@@ -39,7 +39,7 @@ pub struct DashboardStats {
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct TrendItem {
-    pub date: chrono::NaiveDate,
+    pub date: Option<String>,
     pub count: i64,
 }
 
@@ -67,8 +67,8 @@ pub struct DashboardData {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PemeriksaanRalan {
     pub no_rawat: String,
-    pub tgl_perawatan: chrono::NaiveDate,
-    pub jam_rawat: chrono::NaiveTime,
+    pub tgl_perawatan: Option<String>,
+    pub jam_rawat: Option<String>,
     pub suhu_tubuh: String,
     pub tensi: String,
     pub nadi: String,
@@ -93,7 +93,7 @@ pub struct PemeriksaanRalan {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisUmum {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -136,7 +136,7 @@ pub struct PenilaianMedisUmum {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisAnak {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -176,7 +176,7 @@ pub struct PenilaianMedisAnak {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisKandungan {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -223,7 +223,7 @@ pub struct PenilaianMedisKandungan {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisBedah {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -260,7 +260,7 @@ pub struct PenilaianMedisBedah {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisTHT {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -295,7 +295,7 @@ pub struct PenilaianMedisTHT {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisMata {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -350,7 +350,7 @@ pub struct PenilaianMedisMata {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisNeurologi {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -393,7 +393,7 @@ pub struct PenilaianMedisNeurologi {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisParu {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -431,7 +431,7 @@ pub struct PenilaianMedisParu {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisJantung {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -470,7 +470,7 @@ pub struct PenilaianMedisJantung {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisBedahMulut {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -515,7 +515,7 @@ pub struct PenilaianMedisBedahMulut {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisPsikiatrik {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -561,7 +561,7 @@ pub struct PenilaianMedisPsikiatrik {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisOrthopedi {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -602,7 +602,7 @@ pub struct PenilaianMedisOrthopedi {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisUrologi {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -647,7 +647,7 @@ pub struct PenilaianMedisUrologi {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisGeriatri {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -698,7 +698,7 @@ pub struct PenilaianMedisGeriatri {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisRehabMedik {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -740,18 +740,18 @@ pub struct PenilaianMedisRehabMedik {
     pub akupuntur: Option<String>,
     pub tatalain: Option<String>,
     pub frekuensi_terapi: Option<String>,
-    pub fisioterapi: Option<chrono::NaiveDate>,
-    pub terapi_okupasi: Option<chrono::NaiveDate>,
-    pub terapi_wicara: Option<chrono::NaiveDate>,
-    pub terapi_akupuntur: Option<chrono::NaiveDate>,
-    pub terapi_lainnya: Option<chrono::NaiveDate>,
+    pub fisioterapi: Option<String>,
+    pub terapi_okupasi: Option<String>,
+    pub terapi_wicara: Option<String>,
+    pub terapi_akupuntur: Option<String>,
+    pub terapi_lainnya: Option<String>,
     pub edukasi: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisKulitKelamin {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -782,7 +782,7 @@ pub struct PenilaianMedisKulitKelamin {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisGDPsikiatri {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -861,7 +861,7 @@ pub struct PenilaianMedisGDPsikiatri {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianPenyakitDalamCustom {
     pub no_rawat: String,
-    pub tanggal: Option<chrono::NaiveDateTime>,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,
@@ -901,7 +901,7 @@ pub struct PenilaianPenyakitDalamCustom {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct DataTriaseIgd {
     pub no_rawat: String,
-    pub tgl_kunjungan: chrono::NaiveDateTime,
+    pub tgl_kunjungan: Option<String>,
     pub cara_masuk: String,
     pub alat_transportasi: String,
     pub alasan_kedatangan: String,
@@ -939,7 +939,7 @@ pub struct DataTriaseIgdSekunder {
 #[derive(Debug, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
 pub struct PenilaianMedisIgd {
     pub no_rawat: String,
-    pub tanggal: chrono::NaiveDateTime,
+    pub tanggal: Option<String>,
     pub kd_dokter: String,
     pub anamnesis: String,
     pub hubungan: String,

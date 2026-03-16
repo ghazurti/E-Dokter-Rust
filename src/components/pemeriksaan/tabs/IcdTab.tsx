@@ -7,9 +7,11 @@ import { searchIcdAction } from '@/app/pasien-rawat-jalan/actions'
 interface IcdTabProps {
   formData: any
   updateField: (field: string, value: string) => void
+  onSave?: () => Promise<void>
+  isSaving?: boolean
 }
 
-export function IcdTab({ formData, updateField }: IcdTabProps) {
+export function IcdTab({ formData, updateField, onSave, isSaving }: IcdTabProps) {
   const [icdSearch, setIcdSearch] = useState('')
   const [icdResults, setIcdResults] = useState<{kd: string, nm: string}[]>([])
 
@@ -79,6 +81,21 @@ export function IcdTab({ formData, updateField }: IcdTabProps) {
               <p className="text-slate-300 font-bold italic">Belum ada diagnosa dipilih.</p>
            )}
         </div>
+      </div>
+
+      <div className="pt-8 flex justify-end">
+        <button 
+          onClick={onSave}
+          disabled={isSaving || !formData.penilaian}
+          className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs hover:bg-emerald-600 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50 min-w-[200px] justify-center"
+        >
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <Search className="w-5 h-5 text-emerald-400" />
+          )}
+          {isSaving ? 'Menyimpan...' : 'Simpan Diagnosa'}
+        </button>
       </div>
     </div>
   )

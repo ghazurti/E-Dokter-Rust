@@ -5,9 +5,11 @@ import { ClipboardList } from 'lucide-react'
 interface SoapTabProps {
   formData: any
   updateField: (field: string, value: string) => void
+  onSave?: (data: any) => Promise<void>
+  isSaving?: boolean
 }
 
-export function SoapTab({ formData, updateField }: SoapTabProps) {
+export function SoapTab({ formData, updateField, onSave, isSaving }: SoapTabProps) {
   return (
     <div className="space-y-12 w-full">
       {/* Objective (Vital Signs) as per mockup */}
@@ -100,6 +102,21 @@ export function SoapTab({ formData, updateField }: SoapTabProps) {
            value={formData.evaluasi} 
            onChange={(v) => updateField('evaluasi', v)} 
         />
+      </div>
+
+      <div className="pt-8 flex justify-end">
+        <button 
+          onClick={() => onSave?.(formData)}
+          disabled={isSaving}
+          className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs hover:bg-emerald-600 transition-all flex items-center gap-3 shadow-xl active:scale-95 disabled:opacity-50"
+        >
+          {isSaving ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          ) : (
+            <ClipboardList className="w-5 h-5" />
+          )}
+          {isSaving ? 'Menyimpan...' : 'Simpan SOAP & CPPT'}
+        </button>
       </div>
     </div>
   )

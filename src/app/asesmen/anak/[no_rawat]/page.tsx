@@ -13,7 +13,7 @@ import {
   MicOff
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
+import { AiQuickNotes } from '@/components/pemeriksaan/ai/AiQuickNotes'
 
 export default function AsesmenAnakPage({ params }: { params: Promise<{ no_rawat: string }> }) {
   const router = useRouter()

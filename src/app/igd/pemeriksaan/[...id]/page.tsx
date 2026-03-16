@@ -19,7 +19,7 @@ import {
   ShieldAlert
 } from 'lucide-react'
 import Link from 'next/link'
-import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
+import { AiQuickNotes } from '@/components/pemeriksaan/ai/AiQuickNotes'
 import { TriageTab } from '@/components/pemeriksaan/tabs/TriageTab'
 import { AsesmenIgdTab } from '@/components/pemeriksaan/tabs/AsesmenIgdTab'
 import { SoapTab } from '@/components/pemeriksaan/tabs/SoapTab'

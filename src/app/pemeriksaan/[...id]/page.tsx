@@ -27,7 +27,7 @@ import HasilLabTab from '@/components/pemeriksaan/tabs/HasilLabTab'
 import HasilRadTab from '@/components/pemeriksaan/tabs/HasilRadTab'
 import ResumeTab from '@/components/pemeriksaan/tabs/ResumeTab'
 import { IcareButton } from '@/components/pemeriksaan/IcareButton'
-import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
+import { AiQuickNotes } from '@/components/pemeriksaan/ai/AiQuickNotes'
 
 import { saveSoapAction, savePrescriptionFullAction, saveLabRequestAction, saveRadiologyRequestAction } from '@/app/pasien-rawat-jalan/actions'
 

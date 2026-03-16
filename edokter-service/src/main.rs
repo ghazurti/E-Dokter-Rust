@@ -1,7 +1,6 @@
 mod models;
 mod handlers;
-mod bpjs_crypto;
-mod bpjs_service;
+mod services;
 
 use axum::{
     routing::{get, post},

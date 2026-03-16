@@ -9,8 +9,8 @@ import LabInapTab from '@/components/pemeriksaan/tabs/PeriksaLabInap'
 import RadiologiInapTab from '@/components/pemeriksaan/tabs/PeriksaRadInap'
 import HasilLabTab from '@/components/pemeriksaan/tabs/HasilLabTab'
 import HasilRadTab from '@/components/pemeriksaan/tabs/HasilRadTab'
-import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
-import { AiSbarHandover } from '@/components/pemeriksaan/AiSbarHandover'
+import { AiQuickNotes } from '@/components/pemeriksaan/ai/AiQuickNotes'
+import { AiSbarHandover } from '@/components/pemeriksaan/ai/AiSbarHandover'
 
 import { savePrescriptionFullAction } from '@/app/pasien-rawat-jalan/actions'
 

@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use serde::{Deserialize, Serialize};
-use crate::bpjs_service::{self, BpjsConfig};
+use crate::services::bpjs_service::{self, BpjsConfig};
 use std::env;
 
 #[derive(Deserialize)]
@@ -28,14 +28,15 @@ pub async fn validate_icare(
     Json(payload): Json<IcareValidatePayload>,
 ) -> impl IntoResponse {
     // Mapping kd_dokter to kd_dokter_bpjs (from maping_dokter_dpjpvclaim)
-    let mapped_dokter = match sqlx::query!(
-        "SELECT kd_dokter_bpjs FROM maping_dokter_dpjpvclaim WHERE kd_dokter = ?",
-        payload.kode_dokter
+    let mapped_dokter = match sqlx::query(
+        "SELECT kd_dokter_bpjs FROM maping_dokter_dpjpvclaim WHERE kd_dokter = ?"
     )
+    .bind(&payload.kode_dokter)
     .fetch_optional(&pool)
     .await {
         Ok(Some(row)) => {
-            let kd = row.kd_dokter_bpjs.unwrap_or_default();
+            use sqlx::Row;
+            let kd = row.get::<Option<String>, _>("kd_dokter_bpjs").unwrap_or_default();
             if kd.is_empty() {
                 return (
                     StatusCode::BAD_REQUEST,

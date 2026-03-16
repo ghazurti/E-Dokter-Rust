@@ -12,3 +12,5 @@ pub mod ranap;
 pub mod resume;
 pub mod results;
 pub mod bpjs;
+pub mod ai;
+

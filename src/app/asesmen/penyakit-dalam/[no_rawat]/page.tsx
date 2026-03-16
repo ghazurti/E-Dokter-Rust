@@ -1,14 +1,19 @@
 "use client"
 
-import { useEffect, useState, use } from 'react'
+import React, { useState, useEffect, use } from 'react'
 import { 
   ArrowLeft, 
-  Save, 
-  Stethoscope, 
   CheckCircle2, 
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  Zap,
+  Mic,
+  MicOff,
+  Stethoscope,
+  Save
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
 
 export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{ no_rawat: string }> }) {
   const router = useRouter()
@@ -20,6 +25,9 @@ export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [highlightActive, setHighlightActive] = useState(false)
+
   
   const [formData, setFormData] = useState<any>({
     no_rawat: noRawatJoined,
@@ -141,72 +149,88 @@ export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{
       setSaving(false)
     }
   }
+  
+  const handleAiSuggest = (data: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      keluhan_utama: data.subjective || prev.keluhan_utama,
+      lainnya: data.objective || prev.lainnya, // objective mapped to 'lainnya' as per page structure
+      diagnosis: data.assessment || prev.diagnosis,
+      terapi: data.plan || prev.terapi,
+      // Vital Signs mapping
+      td: data.td != null ? String(data.td) : prev.td,
+      suhu: data.suhu != null ? String(data.suhu) : prev.suhu,
+      nadi: data.nadi != null ? String(data.nadi) : prev.nadi,
+      rr: data.rr != null ? String(data.rr) : prev.rr,
+      bb: data.bb != null ? String(data.bb) : prev.bb,
+      nyeri: data.nyeri != null ? String(data.nyeri) : prev.nyeri,
+      gcs: data.gcs != null ? String(data.gcs) : prev.gcs,
+    }))
+    
+    setSaveStatus('success')
+    setHighlightActive(true)
+    setTimeout(() => setHighlightActive(false), 2000)
+    setTimeout(() => setSaveStatus('idle'), 3000)
+  }
 
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-bold text-slate-500 animate-pulse uppercase tracking-widest text-xs">Memuat Data Asesmen Penyakit Dalam...</p>
+          <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+          <p className="text-slate-400 font-bold animate-pulse uppercase tracking-[0.2em] text-[10px]">Memuat Formulir...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col">
-      <header className="bg-white/80 backdrop-blur-xl border-b border-blue-50 px-8 py-6 sticky top-0 z-30 flex items-center justify-between shadow-sm">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <button onClick={() => router.back()} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all group">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <button onClick={() => router.back()} className="p-3 hover:bg-slate-50 rounded-2xl transition-all active:scale-90">
+            <ArrowLeft className="w-5 h-5 text-slate-400" />
           </button>
-          <div className="flex items-center gap-4">
-             <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-[1.2rem] flex items-center justify-center text-white shadow-lg shadow-blue-100">
-                <Stethoscope className="w-7 h-7" />
-             </div>
-             <div>
-                <div className="flex items-center gap-3">
-                   <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase">ASESMEN MEDIS PENYAKIT DALAM</h1>
-                   <span className="bg-blue-600 text-white px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase">INTERNAL MEDICINE</span>
-                </div>
-                <p className="text-[11px] font-bold text-slate-400 flex items-center gap-3 mt-1 uppercase">
-                   <span className="text-slate-900">{patient?.nm_pasien}</span>
-                   <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                   <span>RM: {patient?.no_rkm_medis}</span>
-                   <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                   <span className="text-blue-600 font-extrabold">{noRawatJoined}</span>
-                </p>
-             </div>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">ASESMEN MEDIS PENYAKIT DALAM</h1>
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider">Spesialis</span>
+            </div>
+            {patient && (
+              <p className="text-xs text-slate-400 font-bold mt-0.5">
+                {patient.nm_pasien} • {patient.no_rkm_medis} • {noRawatJoined}
+              </p>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-           {saveStatus === 'success' && (
-              <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs mr-4 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">
-                 <CheckCircle2 className="w-4 h-4" />
-                 Berhasil Disimpan
-              </div>
-           )}
-           {saveStatus === 'error' && (
-              <div className="flex items-center gap-2 text-rose-600 font-bold text-xs mr-4 bg-rose-50 px-4 py-2 rounded-full border border-rose-100">
-                 <AlertCircle className="w-4 h-4" />
-                 {errorMessage}
-              </div>
-           )}
-           <button 
-             disabled={saving}
-             onClick={handleSave}
-             className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-xs hover:bg-blue-600 shadow-xl shadow-slate-100 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
-           >
-             {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><Save className="w-4 h-4" /> SIMPAN ASESMEN</>}
-           </button>
+          {saveStatus === 'success' && (
+            <div className="flex items-center gap-2 text-emerald-500 bg-emerald-50 px-4 py-2 rounded-xl animate-in fade-in slide-in-from-right-4">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Berhasil Disimpan</span>
+            </div>
+          )}
+          {saveStatus === 'error' && (
+            <div className="flex items-center gap-2 text-rose-500 bg-rose-50 px-4 py-2 rounded-xl">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{errorMessage || 'Gagal Menyimpan'}</span>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="flex-1 p-12 flex flex-col items-center">
-        <div className="w-full max-w-6xl space-y-8">
-          
-          <section className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
+      <main className="max-w-7xl mx-auto py-10 px-8">
+        <div className="space-y-10">
+          <AiQuickNotes 
+            onSuggest={handleAiSuggest} 
+            onAnalyzing={setIsAnalyzing}
+            variant="blue"
+          />
+
+          {/* Section I: Anamnesis */}
+          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8 transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
             <h3 className="text-sm font-black text-slate-900 tracking-[0.2em] uppercase flex items-center gap-3">
               <div className="w-2 h-8 bg-blue-400 rounded-full"></div>
               I. Anamnesis
@@ -224,7 +248,7 @@ export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{
                   <option value="Alloanamnesis">Alloanamnesis</option>
                 </select>
               </div>
-              <InputField label="Hubungan" value={formData.hubungan} onChange={(v: string) => setFormData({...formData, hubungan: v})} placeholder="Hubungan dengan pasien..." />
+              <InputField label="Hubungan / Pemberi Informasi" value={formData.hubungan} onChange={(v: string) => setFormData({...formData, hubungan: v})} placeholder="Hubungan dengan pasien..." />
             </div>
 
             <TextAreaField label="Keluhan Utama" value={formData.keluhan_utama} onChange={(v: string) => setFormData({...formData, keluhan_utama: v})} />
@@ -238,9 +262,10 @@ export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{
             </div>
           </section>
 
-          <section className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
+          {/* Section II: Status Fisik */}
+          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8 transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
             <h3 className="text-sm font-black text-slate-900 tracking-[0.2em] uppercase flex items-center gap-3">
-              <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
+              <div className="w-2 h-8 bg-indigo-500 rounded-full"></div>
               II. Status Fisik & Pemeriksaan Klinis
             </h3>
 
@@ -248,7 +273,7 @@ export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{
               <InputField label="TD (mmHg)" value={formData.td} onChange={(v: string) => setFormData({...formData, td: v})} />
               <InputField label="Nadi (x/mnt)" value={formData.nadi} onChange={(v: string) => setFormData({...formData, nadi: v})} />
               <InputField label="Suhu (°C)" value={formData.suhu} onChange={(v: string) => setFormData({...formData, suhu: v})} />
-               <InputField label="RR (x/mnt)" value={formData.rr} onChange={(v: string) => setFormData({...formData, rr: v})} />
+              <InputField label="RR (x/mnt)" value={formData.rr} onChange={(v: string) => setFormData({...formData, rr: v})} />
               <InputField label="BB (Kg)" value={formData.bb} onChange={(v: string) => setFormData({...formData, bb: v})} />
               <InputField label="Nyeri" value={formData.nyeri} onChange={(v: string) => setFormData({...formData, nyeri: v})} />
               <InputField label="GCS" value={formData.gcs} onChange={(v: string) => setFormData({...formData, gcs: v})} />
@@ -267,11 +292,12 @@ export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{
                   <SystemicToggleWithDesc label="Abdomen" value={formData.abdomen} desc={formData.keterangan_abdomen} onChange={(v: string) => setFormData({...formData, abdomen: v})} onDescChange={(v: string) => setFormData({...formData, keterangan_abdomen: v})} />
                   <SystemicToggleWithDesc label="Ekstremitas" value={formData.ekstremitas} desc={formData.keterangan_ekstremitas} onChange={(v: string) => setFormData({...formData, ekstremitas: v})} onDescChange={(v: string) => setFormData({...formData, keterangan_ekstremitas: v})} />
                </div>
-               <TextAreaField label="Lainnya" value={formData.lainnya} onChange={(v: string) => setFormData({...formData, lainnya: v})} />
+               <TextAreaField label="Pemeriksaan Lainnya" value={formData.lainnya} onChange={(v: string) => setFormData({...formData, lainnya: v})} />
             </div>
           </section>
 
-          <section className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
+          {/* Section III: Diagnosis & Plan */}
+          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8 transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
             <h3 className="text-sm font-black text-slate-900 tracking-[0.2em] uppercase flex items-center gap-3">
               <div className="w-2 h-8 bg-emerald-500 rounded-full"></div>
               III. Diagnosis & Perencanaan
@@ -284,13 +310,15 @@ export default function AsesmenPenyakitDalamPage({ params }: { params: Promise<{
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <TextAreaField label="Diagnosis 1" value={formData.diagnosis} onChange={(v: string) => setFormData({...formData, diagnosis: v})} />
-              <TextAreaField label="Diagnosis 2" value={formData.diagnosis2} onChange={(v: string) => setFormData({...formData, diagnosis2: v})} />
+              <TextAreaField label="Diagnosisutama" value={formData.diagnosis} onChange={(v: string) => setFormData({...formData, diagnosis: v})} />
+              <TextAreaField label="Diagnosis Sekunder" value={formData.diagnosis2} onChange={(v: string) => setFormData({...formData, diagnosis2: v})} />
             </div>
             <TextAreaField label="Permasalahan" value={formData.permasalahan} onChange={(v: string) => setFormData({...formData, permasalahan: v})} />
             <TextAreaField label="Terapi" value={formData.terapi} onChange={(v: string) => setFormData({...formData, terapi: v})} />
-            <TextAreaField label="Tindakan" value={formData.tindakan} onChange={(v: string) => setFormData({...formData, tindakan: v})} />
-            <TextAreaField label="Edukasi" value={formData.edukasi} onChange={(v: string) => setFormData({...formData, edukasi: v})} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <TextAreaField label="Tindakan" value={formData.tindakan} onChange={(v: string) => setFormData({...formData, tindakan: v})} />
+              <TextAreaField label="Edukasi" value={formData.edukasi} onChange={(v: string) => setFormData({...formData, edukasi: v})} />
+            </div>
           </section>
 
           <div className="flex justify-end gap-4 pb-12">

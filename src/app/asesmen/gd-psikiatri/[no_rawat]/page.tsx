@@ -13,6 +13,7 @@ import {
   LogOut
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
 
 export default function AsesmenGDPsikiatriPage({ params }: { params: Promise<{ no_rawat: string }> }) {
   const router = useRouter()
@@ -24,6 +25,8 @@ export default function AsesmenGDPsikiatriPage({ params }: { params: Promise<{ n
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [highlightActive, setHighlightActive] = useState(false)
   
   const [formData, setFormData] = useState<any>({
     no_rawat: noRawatJoined,
@@ -156,6 +159,29 @@ export default function AsesmenGDPsikiatriPage({ params }: { params: Promise<{ n
     fetchData()
   }, [noRawatJoined, resolvedParams.no_rawat])
 
+  const handleAiSuggest = (data: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      keluhan_utama: data.subjective || prev.keluhan_utama,
+      status_lokalisata: data.objective || prev.status_lokalisata,
+      diagnosis: data.assessment || prev.diagnosis,
+      instruksi_medis: data.plan || prev.instruksi_medis,
+      // Vital Signs (using fisik_ prefix)
+      fisik_td: data.td != null ? String(data.td) : prev.fisik_td,
+      fisik_suhu: data.suhu != null ? String(data.suhu) : prev.fisik_suhu,
+      fisik_nadi: data.nadi != null ? String(data.nadi) : prev.fisik_nadi,
+      fisik_rr: data.rr != null ? String(data.rr) : prev.fisik_rr,
+      fisik_bb: data.bb != null ? String(data.bb) : prev.fisik_bb,
+      fisik_tb: data.tb != null ? String(data.tb) : prev.fisik_tb,
+      fisik_gcs: data.gcs != null ? String(data.gcs) : prev.fisik_gcs,
+    }))
+    
+    setSaveStatus('success')
+    setHighlightActive(true)
+    setTimeout(() => setHighlightActive(false), 2000)
+    setTimeout(() => setSaveStatus('idle'), 3000)
+  }
+
   const handleSave = async () => {
     setSaving(true)
     setSaveStatus('idle')
@@ -246,8 +272,13 @@ export default function AsesmenGDPsikiatriPage({ params }: { params: Promise<{ n
 
       <main className="flex-1 p-12 flex flex-col items-center">
         <div className="w-full max-w-6xl space-y-8">
+          <AiQuickNotes 
+            onSuggest={handleAiSuggest} 
+            onAnalyzing={setIsAnalyzing}
+            variant="indigo"
+          />
           
-          <section className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
+          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8 transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
             <h3 className="text-sm font-black text-slate-900 tracking-[0.2em] uppercase flex items-center gap-3">
               <div className="w-2 h-8 bg-indigo-400 rounded-full"></div>
               I. Anamnesis Gawat Darurat

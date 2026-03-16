@@ -27,6 +27,7 @@ import HasilLabTab from '@/components/pemeriksaan/tabs/HasilLabTab'
 import HasilRadTab from '@/components/pemeriksaan/tabs/HasilRadTab'
 import ResumeTab from '@/components/pemeriksaan/tabs/ResumeTab'
 import { IcareButton } from '@/components/pemeriksaan/IcareButton'
+import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
 
 import { saveSoapAction, savePrescriptionFullAction, saveLabRequestAction, saveRadiologyRequestAction } from '@/app/pasien-rawat-jalan/actions'
 
@@ -40,6 +41,8 @@ export default function PemeriksaanPage({ params }: { params: Promise<{ id: stri
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [activeTab, setActiveTab] = useState('SOAP')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [highlightActive, setHighlightActive] = useState(false)
 
   // Lifted State
 const [formData, setFormData] = useState({
@@ -108,6 +111,29 @@ const [formData, setFormData] = useState({
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleAiSuggest = (data: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      keluhan: data.subjective || prev.keluhan,
+      pemeriksaan: data.objective || prev.pemeriksaan,
+      penilaian: data.assessment || prev.penilaian,
+      tindak_lanjut: data.plan || prev.tindak_lanjut,
+      // Vital Signs
+      tensi: data.td != null ? String(data.td) : prev.tensi,
+      suhu: data.suhu != null ? String(data.suhu) : prev.suhu,
+      nadi: data.nadi != null ? String(data.nadi) : prev.nadi,
+      respirasi: data.rr != null ? String(data.rr) : prev.respirasi,
+      berat: data.bb != null ? String(data.bb) : prev.berat,
+      gcs: data.gcs != null ? String(data.gcs) : prev.gcs,
+      spo2: data.spo2 != null ? String(data.spo2) : prev.spo2,
+    }))
+    
+    setSaveStatus('success')
+    setHighlightActive(true)
+    setTimeout(() => setHighlightActive(false), 2000)
+    setTimeout(() => setSaveStatus('idle'), 3000)
   }
 
   const handleGlobalSave = async () => {
@@ -360,7 +386,15 @@ const [formData, setFormData] = useState({
                     </div>
                  </div>
 
-                 <div className="bg-white min-h-[400px]">
+                  <div className="mb-8">
+                     <AiQuickNotes 
+                        onSuggest={handleAiSuggest} 
+                        onAnalyzing={setIsAnalyzing}
+                        variant="emerald"
+                     />
+                  </div>
+
+                  <div className={`bg-white min-h-[400px] transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
                     {activeTab === 'SOAP' && <SoapTab formData={formData} updateField={updateField} />}
                     {activeTab === 'DIAGNOSA' && <IcdTab formData={formData} updateField={updateField} />}
                     {activeTab === 'RESEP' && (

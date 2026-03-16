@@ -10,6 +10,7 @@ import {
   Activity
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
 
 export default function AsesmenKandunganPage({ params }: { params: Promise<{ no_rawat: string }> }) {
   const router = useRouter()
@@ -21,6 +22,8 @@ export default function AsesmenKandunganPage({ params }: { params: Promise<{ no_
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [highlightActive, setHighlightActive] = useState(false)
   
   const [formData, setFormData] = useState<any>({
     no_rawat: noRawatJoined,
@@ -122,6 +125,29 @@ export default function AsesmenKandunganPage({ params }: { params: Promise<{ no_
     fetchData()
   }, [noRawatJoined, resolvedParams.no_rawat])
 
+  const handleAiSuggest = (data: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      keluhan_utama: data.subjective || prev.keluhan_utama,
+      ket_fisik: data.objective || prev.ket_fisik,
+      diagnosis: data.assessment || prev.diagnosis,
+      tata: data.plan || prev.tata,
+      // Vital Signs
+      td: data.td != null ? String(data.td) : prev.td,
+      suhu: data.suhu != null ? String(data.suhu) : prev.suhu,
+      nadi: data.nadi != null ? String(data.nadi) : prev.nadi,
+      rr: data.rr != null ? String(data.rr) : prev.rr,
+      bb: data.bb != null ? String(data.bb) : prev.bb,
+      tb: data.tb != null ? String(data.tb) : prev.tb,
+      gcs: data.gcs != null ? String(data.gcs) : prev.gcs,
+    }))
+    
+    setSaveStatus('success')
+    setHighlightActive(true)
+    setTimeout(() => setHighlightActive(false), 2000)
+    setTimeout(() => setSaveStatus('idle'), 3000)
+  }
+
   const handleSave = async () => {
     setSaving(true)
     setSaveStatus('idle')
@@ -212,9 +238,14 @@ export default function AsesmenKandunganPage({ params }: { params: Promise<{ no_
 
       <main className="flex-1 p-12 flex flex-col items-center">
         <div className="w-full max-w-5xl space-y-8">
+          <AiQuickNotes 
+            onSuggest={handleAiSuggest} 
+            onAnalyzing={setIsAnalyzing}
+            variant="blue"
+          />
           
           {/* I. Anamnesis */}
-          <section className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
+          <section className={`bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8 transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
             <h3 className="text-sm font-black text-slate-900 tracking-[0.2em] uppercase flex items-center gap-3">
               <div className="w-2 h-8 bg-purple-500 rounded-full"></div>
               I. Anamnesis

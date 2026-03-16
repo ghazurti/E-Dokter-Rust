@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, use, useEffect } from 'react'
-import { ArrowLeft, Bed, Stethoscope, ClipboardList, Pill, Beaker, Monitor, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, Bed, Stethoscope, ClipboardList, Pill, Beaker, Monitor, Save, Loader2, CheckCircle2 } from 'lucide-react'
 import SoapInapTab from '@/components/pemeriksaan/tabs/soapInapTab'
 import ResumeInapTab from '@/components/pemeriksaan/tabs/ResumeInapTab'
 import ResepInapTab from '@/components/pemeriksaan/tabs/ResepInapTab'
@@ -9,6 +9,7 @@ import LabInapTab from '@/components/pemeriksaan/tabs/PeriksaLabInap'
 import RadiologiInapTab from '@/components/pemeriksaan/tabs/PeriksaRadInap'
 import HasilLabTab from '@/components/pemeriksaan/tabs/HasilLabTab'
 import HasilRadTab from '@/components/pemeriksaan/tabs/HasilRadTab'
+import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
 
 import { savePrescriptionFullAction } from '@/app/pasien-rawat-jalan/actions'
 
@@ -20,6 +21,9 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
   const [activeTab, setActiveTab] = useState('SOAP')
   const [isSaving, setIsSaving] = useState(false)
   const [history, setHistory] = useState([])
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [highlightActive, setHighlightActive] = useState(false)
+  const [showToast, setShowToast] = useState(false)
 
   // Prescription States
   const [standardMeds, setStandardMeds] = useState<any[]>([])
@@ -94,6 +98,29 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleAiSuggest = (data: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      keluhan: data.subjective || prev.keluhan,
+      pemeriksaan: data.objective || prev.pemeriksaan,
+      penilaian: data.assessment || prev.penilaian,
+      rtl: data.plan || prev.rtl,
+      // Vital Signs mapping (Ranap uses slightly different keys)
+      suhu_tubuh: data.suhu != null ? String(data.suhu) : prev.suhu_tubuh,
+      tensi: data.td != null ? String(data.td) : prev.tensi,
+      nadi: data.nadi != null ? String(data.nadi) : prev.nadi,
+      respirasi: data.rr != null ? String(data.rr) : prev.respirasi,
+      berat: data.bb != null ? String(data.bb) : prev.berat,
+      gcs: data.gcs != null ? String(data.gcs) : prev.gcs,
+      spo2: data.spo2 != null ? String(data.spo2) : prev.spo2,
+    }))
+    
+    setShowToast(true)
+    setHighlightActive(true)
+    setTimeout(() => setHighlightActive(false), 2000)
+    setTimeout(() => setShowToast(false), 3000)
   }
 
   const handleSave = async () => {
@@ -199,6 +226,11 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
           </div>
 
           <div className="flex items-center gap-3">
+             {showToast && (
+                <div className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full text-[10px] font-black border border-emerald-100 uppercase tracking-widest animate-in fade-in slide-in-from-right-2 mr-4">
+                   <CheckCircle2 className="w-3 h-3 inline mr-1" /> AI Berhasil Memetakan Data
+                </div>
+             )}
              {activeTab === 'SOAP' && (
                 <button 
                   onClick={handleSave}
@@ -232,8 +264,15 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4 mt-4 space-y-6">
+      <div className="max-w-7xl mx-auto p-4 mt-6 space-y-8">
+        {/* AI Quick Notes Section */}
+        <AiQuickNotes 
+           onSuggest={handleAiSuggest} 
+           onAnalyzing={setIsAnalyzing}
+           variant="indigo"
+        />
         
+        <div className={`space-y-6 transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
         {/* TAB SWITCHER - Responsif & Berwarna */}
         <div className="flex gap-2 p-1.5 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto no-scrollbar">
           
@@ -359,6 +398,7 @@ export default function DetailRanapPage({ params }: { params: Promise<{ no_rawat
                kdDokter={formData.nip}
             />
           )}
+          </div>
         </div>
       </div>
     </div>

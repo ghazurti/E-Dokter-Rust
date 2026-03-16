@@ -6,3 +6,14 @@
 body {
   @apply antialiased text-slate-900;
 }
+
+@keyframes ai-highlight {
+  0% { @apply ring-4 ring-indigo-500/0 bg-indigo-50/0; }
+  20% { @apply ring-4 ring-indigo-500/30 bg-indigo-50/100; }
+  80% { @apply ring-4 ring-indigo-500/30 bg-indigo-50/100; }
+  100% { @apply ring-4 ring-indigo-500/0 bg-indigo-50/0; }
+}
+
+.ai-highlight {
+  animation: ai-highlight 1.5s ease-in-out;
+}

@@ -19,6 +19,7 @@ import {
   ShieldAlert
 } from 'lucide-react'
 import Link from 'next/link'
+import { AiQuickNotes } from '@/components/pemeriksaan/AiQuickNotes'
 import { TriageTab } from '@/components/pemeriksaan/tabs/TriageTab'
 import { AsesmenIgdTab } from '@/components/pemeriksaan/tabs/AsesmenIgdTab'
 import { SoapTab } from '@/components/pemeriksaan/tabs/SoapTab'
@@ -43,6 +44,8 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [activeTab, setActiveTab] = useState('TRIASE')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [highlightActive, setHighlightActive] = useState(false)
 
   const [formData, setFormData] = useState({
     // Standard SOAP
@@ -79,6 +82,37 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleAiSuggest = (data: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      // Generic SOAP mapping
+      keluhan: data.subjective || prev.keluhan,
+      pemeriksaan: data.objective || prev.pemeriksaan,
+      penilaian: data.assessment || prev.penilaian,
+      tindak_lanjut: data.plan || prev.tindak_lanjut, 
+      
+      // Specialized IGD Assessment fields
+      keluhan_utama: data.subjective || prev.keluhan_utama,
+      ket_fisik: data.objective || prev.ket_fisik,
+      diagnosis: data.assessment || prev.diagnosis,
+      tata: data.plan || prev.tata,
+
+      // Vital Signs
+      tensi: data.td != null ? String(data.td) : prev.tensi,
+      suhu: data.suhu != null ? String(data.suhu) : prev.suhu,
+      nadi: data.nadi != null ? String(data.nadi) : prev.nadi,
+      respirasi: data.rr != null ? String(data.rr) : prev.respirasi,
+      bb: data.bb != null ? String(data.bb) : prev.bb,
+      gcs: data.gcs != null ? String(data.gcs) : prev.gcs,
+      spo2: data.spo2 != null ? String(data.spo2) : prev.spo2,
+    }))
+    
+    setSaveStatus('success')
+    setHighlightActive(true)
+    setTimeout(() => setHighlightActive(false), 2000)
+    setTimeout(() => setSaveStatus('idle'), 3000)
   }
 
   const handleGlobalSave = async (customData?: any) => {
@@ -165,7 +199,13 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
         </aside>
 
         <main className="flex-1 overflow-y-auto bg-white p-12">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-5xl mx-auto space-y-10">
+            <AiQuickNotes 
+              onSuggest={handleAiSuggest} 
+              onAnalyzing={setIsAnalyzing}
+              variant="rose"
+            />
+            <div className={`transition-all duration-500 ${highlightActive ? 'ai-highlight' : ''}`}>
             {activeTab === 'TRIASE' && <TriageTab noRawat={noRawatJoined} patient={patient} onSave={handleGlobalSave} />}
             {activeTab === 'ASESMEN_IGD' && <AsesmenIgdTab formData={formData} updateField={updateField} />}
             {activeTab === 'SOAP' && <SoapTab formData={formData} updateField={updateField} />}
@@ -196,6 +236,7 @@ export default function IgdPemeriksaanPage({ params }: { params: Promise<{ id: s
                 </button>
               </div>
             )}
+            </div>
           </div>
         </main>
       </div>
